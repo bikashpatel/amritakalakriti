@@ -1,0 +1,97 @@
+<%- include('../partials/header') %>
+
+<section class="page-hero" style="padding-bottom: 28px">
+  <div class="container">
+    <h1>Checkout</h1>
+    <div class="checkout-steps" aria-label="Checkout progress">
+      <span class="is-done"><b>✓</b> Cart</span><i></i>
+      <span class="is-current"><b>2</b> Delivery &amp; payment</span><i></i>
+      <span><b>3</b> Confirmation</span>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  <% if (typeof errors !== 'undefined' && errors.length) { %>
+    <div class="alert alert-error"><svg class="icon"><use href="#i-alert"/></svg><ul class="error-list"><% errors.forEach(e => { %><li><%= e %></li><% }) %></ul></div>
+  <% } %>
+
+  <form class="checkout-layout" action="/checkout" method="post" novalidate data-checkout-form>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div>
+      <section class="card form-section">
+        <h2><b>1</b> Delivery address</h2>
+        <div class="form-row">
+          <div class="field"><label for="name">Full name</label><input id="name" name="name" value="<%= form.name %>" autocomplete="name" required></div>
+          <div class="field"><label for="phone">Mobile number</label><input id="phone" name="phone" type="tel" value="<%= form.phone %>" autocomplete="tel" inputmode="tel" placeholder="10-digit mobile" required></div>
+        </div>
+        <div class="field"><label for="email">Email for order updates</label><input id="email" name="email" type="email" value="<%= form.email %>" autocomplete="email" required></div>
+        <div class="field"><label for="line1">House / flat, street</label><input id="line1" name="line1" value="<%= form.line1 %>" autocomplete="address-line1" required></div>
+        <div class="field"><label for="line2">Area, landmark <span class="muted">(optional)</span></label><input id="line2" name="line2" value="<%= form.line2 %>" autocomplete="address-line2"></div>
+        <div class="form-row-3">
+          <div class="field"><label for="city">City</label><input id="city" name="city" value="<%= form.city %>" autocomplete="address-level2" required></div>
+          <div class="field"><label for="state">State</label>
+            <select id="state" name="state" autocomplete="address-level1" required>
+              <option value="">Choose…</option>
+              <% states.forEach(s => { %><option <%= form.state === s ? 'selected' : '' %>><%= s %></option><% }) %>
+            </select>
+          </div>
+          <div class="field"><label for="pincode">PIN code</label><input id="pincode" name="pincode" value="<%= form.pincode %>" inputmode="numeric" maxlength="6" autocomplete="postal-code" required></div>
+        </div>
+        <label class="check"><input type="checkbox" name="save_address" value="1" <%= form.save_address !== undefined || !user.address_line1 ? 'checked' : '' %>> Save this address to my account</label>
+      </section>
+
+      <section class="card form-section">
+        <h2><b>2</b> Payment</h2>
+        <div class="pay-options">
+          <% if (options.online) { %>
+            <label class="pay-option">
+              <input type="radio" name="payment" value="online" <%= form.payment !== 'cod' ? 'checked' : '' %>>
+              <div>
+                <strong>Pay online<% if (options.onlineMethod === 'demo') { %><span class="demo-flag">Demo mode</span><% } %></strong>
+                <small>Secure payment via Razorpay</small>
+                <div class="pay-logos"><span>UPI</span><span>GPay</span><span>PhonePe</span><span>Visa</span><span>Mastercard</span><span>RuPay</span><span>Net Banking</span></div>
+              </div>
+              <svg class="icon"><use href="#i-card"/></svg>
+            </label>
+          <% } %>
+          <% if (options.cod) { %>
+            <label class="pay-option">
+              <input type="radio" name="payment" value="cod" <%= form.payment === 'cod' || !options.online ? 'checked' : '' %>>
+              <div><strong>Cash on delivery</strong><small>Pay in cash or UPI when your artwork arrives</small></div>
+              <svg class="icon"><use href="#i-cash"/></svg>
+            </label>
+          <% } %>
+          <% if (!options.online && !options.cod) { %>
+            <div class="alert alert-info"><svg class="icon"><use href="#i-info"/></svg> Ordering is paused right now. Please contact us to buy an artwork.</div>
+          <% } %>
+        </div>
+        <div class="field" style="margin-top: 20px">
+          <label for="note">Note for the artist <span class="muted">(optional)</span></label>
+          <textarea id="note" name="note" maxlength="500" style="min-height:90px" placeholder="Gift message, delivery instructions…"><%= form.note || '' %></textarea>
+        </div>
+      </section>
+    </div>
+
+    <aside class="card summary">
+      <h2>Your order</h2>
+      <div class="mini-lines">
+        <% cart.lines.forEach(({ product: p, quantity, lineTotal }) => { %>
+          <div class="mini-line">
+            <span class="mini-thumb"><img src="<%= p.image %>" alt=""><% if (quantity > 1) { %><b><%= quantity %></b><% } %></span>
+            <span><strong><%= p.title %></strong><span class="muted small"><%= p.category_name %></span></span>
+            <span><%= formatINR(lineTotal) %></span>
+          </div>
+        <% }) %>
+      </div>
+      <div class="summary-row"><span>Subtotal</span><span><%= formatINR(cart.subtotal) %></span></div>
+      <div class="summary-row"><span>Shipping</span><span><%= cart.shipping ? formatINR(cart.shipping) : 'Free' %></span></div>
+      <div class="summary-row total"><span>Total</span><span class="price"><%= formatINR(cart.total) %></span></div>
+      <button class="btn btn-gold btn-lg btn-block" type="submit" <%= !options.online && !options.cod ? 'disabled' : '' %>>Place order <svg class="icon"><use href="#i-arrow-right"/></svg></button>
+      <p class="summary-note"><svg class="icon"><use href="#i-shield"/></svg> Your payment details are never stored on our site.</p>
+      <p class="summary-note" style="margin-top:4px">By placing this order you agree to our <a class="link" href="/pages/terms">terms</a>.</p>
+    </aside>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

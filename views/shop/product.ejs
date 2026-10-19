@@ -1,0 +1,218 @@
+<%- include('../partials/header') %>
+<% const soldOut = product.stock <= 0; const onSale = product.compare_at_price && product.compare_at_price > product.price; const saved = wishlistIds.has(product.id); const left = product.stock - inCart; %>
+<script type="application/ld+json"><%- JSON.stringify({
+  '@context': 'https://schema.org', '@type': 'Product', name: product.title, sku: product.sku || undefined,
+  image: gallery.map(g => baseUrl + g), description: product.short_description || undefined,
+  category: product.category_name || undefined, brand: { '@type': 'Brand', name: settings.store_name },
+  offers: { '@type': 'Offer', priceCurrency: 'INR', price: product.price, url: baseUrl + '/art/' + product.slug,
+    availability: soldOut ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition' },
+  aggregateRating: reviews.length ? { '@type': 'AggregateRating', ratingValue: rating.toFixed(1), reviewCount: reviews.length } : undefined,
+}).replace(/</g, '\\u003c') %></script>
+
+<div class="container" style="padding-top: 28px">
+  <nav class="crumbs crumbs-left" aria-label="Breadcrumb">
+    <a href="/">Home</a><span aria-hidden="true">✦</span>
+    <a href="/shop">Shop</a><span aria-hidden="true">✦</span>
+    <% if (product.category_slug) { %><a href="/shop/<%= product.category_slug %>"><%= product.category_name %></a><span aria-hidden="true">✦</span><% } %>
+    <span><%= product.title %></span>
+  </nav>
+</div>
+
+<div class="container product-layout">
+  <div class="gallery" data-gallery>
+    <div class="gallery-stage">
+      <div class="gallery-view" data-view="art">
+        <img src="<%= gallery[0] || '/images/emblem-md.png' %>" alt="<%= product.title %> — <%= product.medium %>" data-main-image>
+      </div>
+      <div class="wall-view gallery-view" data-view="wall" data-dims="<%= product.dimensions %>" hidden>
+        <div class="wall-art" data-wall-art><img src="<%= gallery[0] %>" alt=""></div>
+        <svg class="wall-sofa" data-wall-sofa viewBox="0 0 300 120" aria-hidden="true">
+          <rect x="18" y="8" width="264" height="62" rx="16" fill="#8E9A74"/>
+          <rect x="0" y="40" width="40" height="66" rx="14" fill="#7D8964"/>
+          <rect x="260" y="40" width="40" height="66" rx="14" fill="#7D8964"/>
+          <rect x="34" y="58" width="232" height="44" rx="10" fill="#9AA680"/>
+          <rect x="44" y="22" width="56" height="40" rx="10" fill="#E8C9A0"/>
+          <rect x="200" y="22" width="56" height="40" rx="10" fill="#D79A8E"/>
+          <rect x="22" y="104" width="6" height="14" rx="2" fill="#5B3D22"/>
+          <rect x="272" y="104" width="6" height="14" rx="2" fill="#5B3D22"/>
+        </svg>
+        <span class="wall-note">Shown to scale above a 7 ft sofa</span>
+      </div>
+      <div class="gallery-tabs" role="group" aria-label="View">
+        <button type="button" aria-pressed="true" data-view-btn="art"><svg class="icon"><use href="#i-frame"/></svg> Artwork</button>
+        <button type="button" aria-pressed="false" data-view-btn="wall"><svg class="icon"><use href="#i-sofa"/></svg> On your wall</button>
+      </div>
+    </div>
+    <% if (gallery.length > 1) { %>
+      <div class="thumbs">
+        <% gallery.forEach((src, i) => { %>
+          <button type="button" data-thumb="<%= src %>" aria-current="<%= i === 0 %>" aria-label="Show image <%= i + 1 %>"><img src="<%= src %>" alt="" loading="lazy"></button>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="product-info">
+    <% if (product.category_name) { %><a class="product-cat" href="/shop/<%= product.category_slug %>"><%= product.category_name %></a><% } %>
+    <h1><%= product.title %></h1>
+    <% if (reviews.length) { %>
+      <a class="product-rating" href="#reviews">
+        <span class="stars" aria-label="<%= rating.toFixed(1) %> out of 5"><% for (let i = 1; i <= 5; i++) { %><svg class="icon <%= i <= Math.round(rating) ? '' : 'off' %>"><use href="#i-star"/></svg><% } %></span>
+        <%= rating.toFixed(1) %> · <%= reviews.length %> <%= reviews.length === 1 ? 'review' : 'reviews' %>
+      </a>
+    <% } %>
+    <% if (product.short_description) { %><p class="product-short"><%= product.short_description %></p><% } %>
+
+    <div class="product-price">
+      <span class="price"><%= formatINR(product.price) %></span>
+      <% if (onSale) { %><span class="price-was"><%= formatINR(product.compare_at_price) %></span><span class="badge badge-rose">Save <%= formatINR(product.compare_at_price - product.price) %></span><% } %>
+      <span class="tax">Inclusive of all taxes</span>
+    </div>
+
+    <% if (soldOut) { %>
+      <p class="stock-line is-out"><span class="dot"></span> This piece has found its home.</p>
+      <div class="btn-row" style="margin-bottom: 26px">
+        <a class="btn btn-gold" href="/contact?subject=<%= encodeURIComponent('Similar to: ' + product.title) %>">Commission something similar</a>
+        <a class="btn btn-outline" href="/shop/<%= product.category_slug || '' %>">More <%= product.category_name || 'art' %></a>
+      </div>
+    <% } else { %>
+      <p class="stock-line <%= product.stock === 1 ? 'is-low' : '' %>"><span class="dot"></span>
+        <%= product.stock === 1 ? 'One of a kind — only this original exists' : `In stock — ${product.stock} available` %>
+        <% if (inCart) { %> · <a class="link" href="/cart"><%= inCart %> in your cart</a><% } %>
+      </p>
+      <form action="/cart/add" method="post" data-add-to-cart data-redirect-on-fail>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="product_id" value="<%= product.id %>">
+        <div class="buy-row">
+          <% if (product.stock > 1) { %>
+            <div class="qty" data-qty>
+              <button type="button" data-qty-step="-1" aria-label="Decrease quantity"><svg class="icon"><use href="#i-minus"/></svg></button>
+              <input type="number" name="qty" value="1" min="1" max="<%= Math.max(1, Math.min(10, left)) %>" aria-label="Quantity">
+              <button type="button" data-qty-step="1" aria-label="Increase quantity"><svg class="icon"><use href="#i-plus"/></svg></button>
+            </div>
+          <% } else { %><span></span><% } %>
+          <button class="btn btn-dark" type="submit" <%= left <= 0 ? 'disabled' : '' %>><svg class="icon"><use href="#i-bag"/></svg> <%= left <= 0 ? 'In your cart' : 'Add to cart' %></button>
+          <button class="btn btn-outline wish-big wish-btn<%= saved ? ' is-saved' : '' %>" type="submit" formaction="/account/wishlist/toggle" data-wishlist-btn aria-pressed="<%= saved %>" aria-label="<%= saved ? 'Remove from wishlist' : 'Save to wishlist' %>" style="padding:0;border-radius:50%">
+            <svg class="icon"><use href="#i-heart"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-gold btn-lg buy-now" type="submit" name="buy_now" value="1" data-no-ajax>Buy it now</button>
+      </form>
+    <% } %>
+
+    <div class="assurance">
+      <div><svg class="icon"><use href="#i-award"/></svg>Certificate of authenticity</div>
+      <div><svg class="icon"><use href="#i-package"/></svg>Insured, damage-proof packing</div>
+      <div><svg class="icon"><use href="#i-truck"/></svg><%= product.price >= Number(settings.free_shipping_min) ? 'Free shipping in India' : `Free shipping over ${formatINR(settings.free_shipping_min)}` %></div>
+    </div>
+
+    <dl class="spec-list">
+      <% if (product.medium) { %><dt>Medium</dt><dd><%= product.medium %></dd><% } %>
+      <% if (product.dimensions) { %><dt>Size</dt><dd><%= product.dimensions %></dd><% } %>
+      <% if (product.artist) { %><dt>Artist</dt><dd><%= product.artist %></dd><% } %>
+      <% if (product.year) { %><dt>Year</dt><dd><%= product.year %></dd><% } %>
+      <% if (product.sku) { %><dt>Ref.</dt><dd><%= product.sku %></dd><% } %>
+    </dl>
+
+    <div class="accordion">
+      <details open>
+        <summary>About this artwork <svg class="icon"><use href="#i-plus"/></svg></summary>
+        <div class="acc-body prose" style="font-size:1rem"><%- h.renderText(product.description) %></div>
+      </details>
+      <details>
+        <summary>Shipping &amp; returns <svg class="icon"><use href="#i-plus"/></svg></summary>
+        <div class="acc-body">
+          <p>Dispatched within 3–5 working days in protective, insured packaging. Delivery across India usually takes 5–10 working days.</p>
+          <p>If your artwork arrives damaged, tell us within 48 hours for a replacement or full refund. <a class="link" href="/pages/returns">Read the full policy</a>.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Caring for your art <svg class="icon"><use href="#i-plus"/></svg></summary>
+        <div class="acc-body">
+          <p>Hang away from direct sunlight and damp walls. Dust gently with a soft, dry brush. Paper and cloth works are best framed behind glass.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<section class="section section-alt" id="reviews">
+  <div class="container reviews-grid">
+    <div>
+      <div class="card rating-summary">
+        <p class="eyebrow">Reviews</p>
+        <% if (reviews.length) { %>
+          <div class="rating-big"><%= rating.toFixed(1) %></div>
+          <div class="stars" style="justify-content:center;margin:8px 0"><% for (let i = 1; i <= 5; i++) { %><svg class="icon <%= i <= Math.round(rating) ? '' : 'off' %>"><use href="#i-star"/></svg><% } %></div>
+          <p class="muted small">Based on <%= reviews.length %> <%= reviews.length === 1 ? 'review' : 'reviews' %></p>
+        <% } else { %>
+          <h3>No reviews yet</h3>
+          <p class="muted small">Own this piece, or one like it? Share your thoughts.</p>
+        <% } %>
+      </div>
+
+      <div class="card card-pad" style="margin-top: 16px">
+        <% if (user) { %>
+          <h3 style="font-size:1.35rem"><%= myReview ? 'Update your review' : 'Write a review' %></h3>
+          <form action="/art/<%= product.slug %>/review" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="field">
+              <span class="label">Your rating</span>
+              <div class="star-input">
+                <% for (let i = 5; i >= 1; i--) { %>
+                  <input type="radio" id="star<%= i %>" name="rating" value="<%= i %>" <%= myReview && myReview.rating === i ? 'checked' : '' %> required>
+                  <label for="star<%= i %>" title="<%= i %> star<%= i > 1 ? 's' : '' %>"><svg class="icon"><use href="#i-star"/></svg><span class="sr-only"><%= i %> stars</span></label>
+                <% } %>
+              </div>
+            </div>
+            <div class="field">
+              <label for="comment">Your thoughts</label>
+              <textarea id="comment" name="comment" maxlength="1200" placeholder="What did you love about it?"><%= myReview ? myReview.comment : '' %></textarea>
+            </div>
+            <button class="btn btn-dark btn-block" type="submit">Save review</button>
+          </form>
+        <% } else { %>
+          <p class="muted" style="margin:0"><a class="link" href="/login?next=<%= encodeURIComponent('/art/' + product.slug + '#reviews') %>">Sign in</a> to write a review.</p>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="review-list">
+      <% reviews.forEach(r => { %>
+        <article class="card review">
+          <div class="review-head">
+            <div>
+              <span class="review-name"><%= r.user_name %></span>
+              <% if (r.verified) { %><span class="badge badge-sage" style="margin-left:8px"><svg class="icon" style="width:12px;height:12px"><use href="#i-check"/></svg> Verified buyer</span><% } %>
+            </div>
+            <span class="muted small"><%= h.formatDate(r.created_at) %></span>
+          </div>
+          <div class="stars" style="margin-bottom:8px"><% for (let i = 1; i <= 5; i++) { %><svg class="icon <%= i <= r.rating ? '' : 'off' %>"><use href="#i-star"/></svg><% } %></div>
+          <% if (r.comment) { %><p><%= r.comment %></p><% } %>
+        </article>
+      <% }) %>
+      <% if (!reviews.length) { %>
+        <div class="empty card"><svg class="icon"><use href="#i-message"/></svg><h3>Be the first to share a few words</h3><p>Your review helps other art lovers discover this piece.</p></div>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<% if (related.length) { %>
+<section class="section">
+  <div class="container">
+    <div class="section-head-row">
+      <div>
+        <p class="eyebrow"><svg class="icon"><use href="#i-lotus"/></svg> You may also love</p>
+        <h2>More to discover</h2>
+      </div>
+      <% if (product.category_slug) { %><a class="btn btn-ghost" href="/shop/<%= product.category_slug %>">All <%= product.category_name %> <svg class="icon"><use href="#i-arrow-right"/></svg></a><% } %>
+    </div>
+    <div class="product-grid">
+      <% related.forEach(p => { %><%- include('../partials/product-card', { p }) %><% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<%- include('../partials/footer') %>

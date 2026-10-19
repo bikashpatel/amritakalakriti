@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title ? `${title} · ` : '' %>Admin · <%= settings.store_name || 'AmritaKalakriti' %></title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#2E1B0E">
+  <link rel="icon" href="/images/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <script src="/js/admin.js" defer></script>
+</head>
+<body class="adm">
+<%- include('../../partials/icons') %>
+<a class="adm-skip" href="#main">Skip to content</a>
+<%
+  const nav = [
+    { group: 'Store', items: [
+      { key: 'dashboard', href: '/admin', icon: 'i-grid', label: 'Dashboard' },
+      { key: 'orders', href: '/admin/orders', icon: 'i-bag', label: 'Orders', count: adminCounts.toFulfil, hint: 'to fulfil' },
+      { key: 'products', href: '/admin/products', icon: 'i-image', label: 'Artworks' },
+      { key: 'categories', href: '/admin/categories', icon: 'i-tag', label: 'Art forms' },
+    ] },
+    { group: 'People', items: [
+      { key: 'customers', href: '/admin/customers', icon: 'i-users', label: 'Customers' },
+      { key: 'reviews', href: '/admin/reviews', icon: 'i-star', label: 'Reviews' },
+      { key: 'messages', href: '/admin/messages', icon: 'i-message', label: 'Messages', count: adminCounts.unread, hint: 'unread' },
+      { key: 'subscribers', href: '/admin/subscribers', icon: 'i-mail', label: 'Subscribers' },
+    ] },
+    { group: 'Content', items: [
+      { key: 'pages', href: '/admin/pages', icon: 'i-file', label: 'Pages' },
+      { key: 'settings', href: '/admin/settings', icon: 'i-settings', label: 'Settings' },
+    ] },
+  ];
+  const initial = (user.name || user.email || 'A').trim().charAt(0).toUpperCase();
+%>
+<div class="adm-shell">
+  <aside class="adm-side" id="adm-side" aria-label="Admin">
+    <div class="adm-side-head">
+      <a class="adm-brand" href="/admin">
+        <span class="adm-brand-badge"><img src="/images/emblem-sm.png" alt="" width="44" height="29"></span>
+        <span class="adm-brand-text">
+          <span class="adm-brand-name"><%= settings.store_name || 'AmritaKalakriti' %></span>
+          <span class="adm-brand-eyebrow">Admin</span>
+        </span>
+      </a>
+      <button class="adm-side-close" type="button" data-drawer-close aria-label="Close menu"><svg class="icon"><use href="#i-close"/></svg></button>
+    </div>
+
+    <nav class="adm-nav">
+      <% nav.forEach((group) => { %>
+        <p class="adm-nav-label"><%= group.group %></p>
+        <ul>
+          <% group.items.forEach((item) => { const active = section === item.key; %>
+          <li>
+            <a class="adm-nav-link<%= active ? ' is-active' : '' %>" href="<%= item.href %>"<% if (active) { %> aria-current="page"<% } %>>
+              <svg class="icon"><use href="#<%= item.icon %>"/></svg>
+              <span><%= item.label %></span>
+              <% if (item.count) { %><span class="adm-count" title="<%= item.count %> <%= item.hint %>"><%= item.count > 99 ? '99+' : item.count %><span class="sr-only"> <%= item.hint %></span></span><% } %>
+            </a>
+          </li>
+          <% }) %>
+        </ul>
+      <% }) %>
+    </nav>
+
+    <div class="adm-side-foot">
+      <a class="adm-pay-status <%= paymentsLive ? 'is-live' : 'is-demo' %>" href="/admin/settings#payments">
+        <span class="dot" aria-hidden="true"></span>
+        <%= paymentsLive ? 'Razorpay connected' : 'Payments in demo mode' %>
+      </a>
+      <a class="adm-nav-link" href="/" target="_blank" rel="noopener">
+        <svg class="icon"><use href="#i-home"/></svg><span>Open storefront</span><svg class="icon adm-ext"><use href="#i-external"/></svg>
+      </a>
+    </div>
+  </aside>
+  <div class="adm-scrim" data-drawer-close></div>
+
+  <div class="adm-main">
+    <header class="adm-top">
+      <button class="adm-menu" type="button" data-drawer-open aria-controls="adm-side" aria-expanded="false" aria-label="Open menu">
+        <svg class="icon"><use href="#i-menu"/></svg>
+      </button>
+      <div class="adm-title">
+        <% if (back) { %>
+          <a class="adm-back" href="<%= back.href %>"><svg class="icon"><use href="#i-arrow-left"/></svg><%= back.label %></a>
+        <% } %>
+        <h1><%= title %></h1>
+      </div>
+      <div class="adm-top-actions">
+        <a class="btn btn-ghost btn-sm adm-viewstore" href="/" target="_blank" rel="noopener" title="View store">
+          <svg class="icon"><use href="#i-external"/></svg><span>View store</span>
+        </a>
+        <span class="adm-user" title="<%= user.email %>">
+          <span class="adm-avatar" aria-hidden="true"><%= initial %></span>
+          <span class="adm-user-name"><%= user.name %></span>
+        </span>
+        <form method="post" action="/logout" class="adm-signout">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-ghost btn-sm btn-icon" type="submit" title="Sign out" aria-label="Sign out">
+            <svg class="icon"><use href="#i-logout"/></svg>
+          </button>
+        </form>
+      </div>
+    </header>
+
+    <main class="adm-content" id="main">
+      <% if (flash && flash.length) { %>
+        <div class="adm-flash" role="status">
+          <% flash.forEach((m) => { const icon = m.type === 'success' ? 'i-check' : m.type === 'error' ? 'i-alert' : 'i-info'; %>
+            <div class="alert alert-<%= ['success', 'error', 'info'].includes(m.type) ? m.type : 'info' %>">
+              <svg class="icon"><use href="#<%= icon %>"/></svg><div><%= m.text %></div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>

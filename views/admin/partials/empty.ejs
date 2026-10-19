@@ -1,0 +1,7 @@
+<div class="empty">
+  <span class="empty-mark"><svg class="icon"><use href="#i-lotus"/></svg></span>
+  <p><%= emptyText %></p>
+  <% if (typeof emptyAction !== 'undefined' && emptyAction) { %>
+    <a class="btn btn-outline btn-sm" href="<%= emptyAction.href %>"><%= emptyAction.label %></a>
+  <% } %>
+</div>

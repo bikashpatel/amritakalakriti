@@ -1,0 +1,17 @@
+<%- include('../partials/header') %>
+<section class="section">
+  <div class="container about-hero">
+    <div class="reveal">
+      <p class="eyebrow"><svg class="icon"><use href="#i-lotus"/></svg> Art · Craft · Creativity</p>
+      <h1><%= page.title %></h1>
+      <p class="hero-script"><%= settings.store_tagline %></p>
+      <p class="lead"><%= settings.about_short %></p>
+      <div class="btn-row"><a class="btn btn-gold" href="/shop">Explore the collection</a><a class="btn btn-outline" href="/contact?subject=Custom%20commission">Commission a painting</a></div>
+    </div>
+    <div class="reveal"><img src="/images/logo-mark.png" alt="AmritaKalakriti logo" loading="lazy"></div>
+  </div>
+</section>
+<div class="container container-narrow">
+  <article class="card page-card prose reveal"><%- html %></article>
+</div>
+<%- include('../partials/footer') %>

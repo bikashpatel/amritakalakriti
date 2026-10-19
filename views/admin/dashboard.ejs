@@ -1,0 +1,174 @@
+<%- include('partials/top') %>
+<%
+  const firstName = /^store admin$/i.test(user.name || '') ? '' : (user.name || '').trim().split(/\s+/)[0];
+  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' });
+%>
+
+<% if (!paymentsLive) { %>
+  <div class="alert alert-info adm-notice">
+    <svg class="icon"><use href="#i-info"/></svg>
+    <div><strong>Payments are in demo mode</strong> — add <code>RAZORPAY_KEY_ID</code> and <code>RAZORPAY_KEY_SECRET</code> to <code>.env</code> to accept real payments.</div>
+  </div>
+<% } %>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="eyebrow"><svg class="icon"><use href="#i-lotus"/></svg><%= today %></p>
+    <p class="page-head-lead">Namaste<%= firstName ? `, ${firstName}` : '' %>. Here is how the studio is doing.</p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-outline btn-sm" href="/admin/orders?status=open"><svg class="icon"><use href="#i-truck"/></svg>Orders to fulfil</a>
+    <a class="btn btn-gold btn-sm" href="/admin/products/new"><svg class="icon"><use href="#i-plus"/></svg>Add artwork</a>
+  </div>
+</div>
+
+<section class="kpis" aria-label="Key figures">
+  <a class="kpi" href="/admin/orders?payment=paid">
+    <span class="kpi-icon"><svg class="icon"><use href="#i-chart"/></svg></span>
+    <span class="kpi-label">Revenue this month</span>
+    <span class="kpi-value"><%= formatINR(k.revenueMonth) %></span>
+    <span class="kpi-sub">All time <strong><%= formatINR(k.revenueAll) %></strong></span>
+  </a>
+  <a class="kpi" href="/admin/orders">
+    <span class="kpi-icon"><svg class="icon"><use href="#i-bag"/></svg></span>
+    <span class="kpi-label">Orders this month</span>
+    <span class="kpi-value"><%= k.ordersMonth.toLocaleString('en-IN') %></span>
+    <span class="kpi-sub"><%= k.ordersAll.toLocaleString('en-IN') %> all time<% if (k.awaitingPayment) { %> · <%= k.awaitingPayment %> awaiting payment<% } %></span>
+  </a>
+  <a class="kpi<%= k.toFulfil ? ' kpi-attention' : '' %>" href="/admin/orders?status=open">
+    <span class="kpi-icon"><svg class="icon"><use href="#i-package"/></svg></span>
+    <span class="kpi-label">Orders to fulfil</span>
+    <span class="kpi-value"><%= k.toFulfil %></span>
+    <span class="kpi-sub"><%= k.toFulfil ? 'Confirmed or being packed' : 'All caught up' %></span>
+  </a>
+  <a class="kpi" href="/admin/customers?role=customer">
+    <span class="kpi-icon"><svg class="icon"><use href="#i-users"/></svg></span>
+    <span class="kpi-label">Customers</span>
+    <span class="kpi-value"><%= k.customers.toLocaleString('en-IN') %></span>
+    <span class="kpi-sub"><%= k.customersMonth ? `+${k.customersMonth} joined this month` : 'No new sign-ups this month' %></span>
+  </a>
+  <a class="kpi" href="/admin/products?status=active">
+    <span class="kpi-icon"><svg class="icon"><use href="#i-image"/></svg></span>
+    <span class="kpi-label">Artworks live</span>
+    <span class="kpi-value"><%= k.activeProducts %></span>
+    <span class="kpi-sub"><%= k.soldOut %> sold out · <%= k.allProducts - k.activeProducts %> hidden</span>
+  </a>
+  <a class="kpi<%= k.unread ? ' kpi-attention' : '' %>" href="/admin/messages<%= k.unread ? '?show=unread' : '' %>">
+    <span class="kpi-icon"><svg class="icon"><use href="#i-message"/></svg></span>
+    <span class="kpi-label">Unread messages</span>
+    <span class="kpi-value"><%= k.unread %></span>
+    <span class="kpi-sub"><%= k.subscribers.toLocaleString('en-IN') %> newsletter subscriber<%= k.subscribers === 1 ? '' : 's' %></span>
+  </a>
+</section>
+
+<div class="dash-grid">
+  <section class="card chart-card" aria-labelledby="rev-title">
+    <div class="card-head">
+      <div>
+        <h2 id="rev-title">Revenue, last 30 days</h2>
+        <p class="card-sub">Paid orders by day · <strong><%= formatINR(chart.total) %></strong> from <%= chart.orders %> order<%= chart.orders === 1 ? '' : 's' %></p>
+      </div>
+    </div>
+    <div class="card-pad">
+      <% if (!chart.total) { %>
+        <%- include('partials/empty', { emptyText: 'No paid orders in the last 30 days yet — the chart fills in as sales arrive.' }) %>
+      <% } else { %>
+        <figure class="bars" data-chart>
+          <div class="bars-plot" role="img" aria-label="Daily revenue for the last 30 days. Best day <%= chart.peak.long %>, <%= formatINR(chart.peak.revenue) %>. Full figures in the table below.">
+            <% chart.ticks.forEach((t) => { %>
+              <div class="bars-tick<%= t === 0 ? ' is-base' : '' %>" style="bottom: <%= (t / chart.top * 100).toFixed(2) %>%" aria-hidden="true"><span><%= compactINR(t) %></span></div>
+            <% }) %>
+            <div class="bars-cols">
+              <% chart.days.forEach((d) => { %>
+                <div class="bars-col<%= d.isPeak ? ' is-peak' : '' %>" tabindex="0"
+                     data-tip-value="<%= formatINR(d.revenue) %>"
+                     data-tip-label="<%= d.long %> · <%= d.orders %> order<%= d.orders === 1 ? '' : 's' %>"
+                     aria-label="<%= d.long %>: <%= formatINR(d.revenue) %>, <%= d.orders %> order<%= d.orders === 1 ? '' : 's' %>">
+                  <span class="bars-bar" style="height: <%= d.pct.toFixed(2) %>%"></span>
+                  <% if (d.isPeak) { %><span class="bars-peak" style="bottom: <%= d.pct.toFixed(2) %>%"><%= compactINR(d.revenue) %></span><% } %>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+          <div class="bars-x" aria-hidden="true">
+            <% chart.days.forEach((d, i) => { %><span><%= (i % 7 === 1 || i === 29) ? d.label : '' %></span><% }) %>
+          </div>
+          <div class="chart-tip" hidden><strong></strong><span></span></div>
+        </figure>
+        <details class="table-view">
+          <summary>View as table</summary>
+          <div class="table-wrap">
+            <table class="table table-compact">
+              <thead><tr><th>Day</th><th class="num">Orders</th><th class="num">Revenue</th></tr></thead>
+              <tbody>
+                <% chart.days.slice().reverse().forEach((d) => { %>
+                  <tr><td><%= d.long %></td><td class="num"><%= d.orders %></td><td class="num"><%= formatINR(d.revenue) %></td></tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      <% } %>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="top-title">
+    <div class="card-head">
+      <div>
+        <h2 id="top-title">Best sellers</h2>
+        <p class="card-sub">By pieces sold, excluding cancelled orders</p>
+      </div>
+    </div>
+    <% if (!topSellers.length) { %>
+      <%- include('partials/empty', { emptyText: 'Your best sellers will appear here after the first orders.' }) %>
+    <% } else { %>
+      <ol class="rank-list">
+        <% topSellers.forEach((p, i) => { %>
+          <li>
+            <span class="rank-n"><%= i + 1 %></span>
+            <% if (p.image) { %><img class="thumb" src="<%= p.image %>" alt="" width="48" height="48" loading="lazy"><% } else { %><span class="thumb thumb-empty"><svg class="icon"><use href="#i-image"/></svg></span><% } %>
+            <span class="rank-text">
+              <% if (p.product_id) { %><a href="/admin/products/<%= p.product_id %>/edit" class="row-title"><%= p.title %></a><% } else { %><span class="row-title"><%= p.title %></span><span class="sub">Deleted artwork</span><% } %>
+              <span class="sub"><%= p.qty %> sold · <%= formatINR(p.revenue) %><% if (p.product_id && p.stock === 0) { %> · <span class="text-rose">sold out</span><% } %></span>
+            </span>
+          </li>
+        <% }) %>
+      </ol>
+    <% } %>
+  </section>
+</div>
+
+<section class="card" aria-labelledby="recent-title">
+  <div class="card-head">
+    <div>
+      <h2 id="recent-title">Recent orders</h2>
+      <p class="card-sub">The latest ten, newest first</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="/admin/orders">All orders<svg class="icon"><use href="#i-arrow-right"/></svg></a>
+  </div>
+  <% if (!recent.length) { %>
+    <%- include('partials/empty', { emptyText: 'No orders yet. When a customer checks out, it will show up here.' }) %>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Order</th><th>Placed</th><th>Customer</th><th class="num">Total</th><th>Payment</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <% recent.forEach((o) => { %>
+            <tr class="row-link">
+              <td><a class="row-title mono" href="/admin/orders/<%= o.id %>"><%= o.order_number %></a><span class="sub"><%= o.item_count %> item<%= o.item_count === 1 ? '' : 's' %></span></td>
+              <td class="nowrap"><%= h.formatDate(o.created_at, true) %></td>
+              <td><%= o.ship_name %><span class="sub"><%= o.ship_city %></span></td>
+              <td class="num"><%= formatINR(o.total) %></td>
+              <td><span class="badge pay-<%= o.payment_status %>"><%= o.payment_status %></span><span class="sub"><%= o.payment_method === 'cod' ? 'COD' : 'Online' %></span></td>
+              <td><span class="badge status-<%= o.status %>"><%= ORDER_STATUS_LABELS[o.status] %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/bottom') %>

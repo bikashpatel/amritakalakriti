@@ -1,0 +1,70 @@
+</main>
+
+<section class="newsletter">
+  <div class="container newsletter-inner">
+    <div>
+      <p class="eyebrow"><svg class="icon"><use href="#i-lotus"/></svg> Join our circle</p>
+      <h2>New paintings, studio stories <em class="script">&amp; first looks</em></h2>
+      <p class="muted">One thoughtful letter a month. No spam — just art.</p>
+    </div>
+    <form class="newsletter-form" action="/subscribe" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="sr-only" for="nl-email">Email address</label>
+      <input id="nl-email" type="email" name="email" placeholder="Your email address" required>
+      <button class="btn btn-gold" type="submit">Subscribe</button>
+    </form>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a href="/" class="footer-medallion" aria-label="<%= settings.store_name %> home">
+        <img src="/images/emblem-sm.png" alt="" width="220" height="144">
+      </a>
+      <p class="footer-name"><%= settings.store_name %></p>
+      <p class="footer-deva deva">अमृता कलाकृति</p>
+      <p class="footer-tag">Art <span>❖</span> Craft <span>❖</span> Creativity</p>
+      <p class="footer-script"><%= settings.store_tagline %></p>
+    </div>
+    <div>
+      <h3 class="footer-h">Art Forms</h3>
+      <ul class="footer-links">
+        <% navCategories.slice(0, 8).forEach(c => { %><li><a href="/shop/<%= c.slug %>"><%= c.name %></a></li><% }) %>
+      </ul>
+    </div>
+    <div>
+      <h3 class="footer-h">Help</h3>
+      <ul class="footer-links">
+        <li><a href="/account">My account &amp; orders</a></li>
+        <li><a href="/pages/shipping">Shipping policy</a></li>
+        <li><a href="/pages/returns">Returns &amp; refunds</a></li>
+        <li><a href="/pages/privacy">Privacy policy</a></li>
+        <li><a href="/pages/terms">Terms &amp; conditions</a></li>
+        <li><a href="/contact">Contact us</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="footer-h">Say Namaste</h3>
+      <ul class="footer-contact">
+        <% if (settings.store_email) { %><li><svg class="icon"><use href="#i-mail"/></svg><a href="mailto:<%= settings.store_email %>"><%= settings.store_email %></a></li><% } %>
+        <% if (settings.store_phone) { %><li><svg class="icon"><use href="#i-phone"/></svg><a href="tel:<%= settings.store_phone.replace(/\s/g, '') %>"><%= settings.store_phone %></a></li><% } %>
+        <% if (settings.store_address) { %><li><svg class="icon"><use href="#i-pin"/></svg><span><%= settings.store_address %></span></li><% } %>
+      </ul>
+      <div class="socials">
+        <% if (settings.instagram_url) { %><a href="<%= settings.instagram_url %>" target="_blank" rel="noopener" aria-label="Instagram"><svg class="icon"><use href="#i-instagram"/></svg></a><% } %>
+        <% if (settings.facebook_url) { %><a href="<%= settings.facebook_url %>" target="_blank" rel="noopener" aria-label="Facebook"><svg class="icon"><use href="#i-facebook"/></svg></a><% } %>
+        <% if (settings.youtube_url) { %><a href="<%= settings.youtube_url %>" target="_blank" rel="noopener" aria-label="YouTube"><svg class="icon"><use href="#i-youtube"/></svg></a><% } %>
+        <% if (settings.store_whatsapp) { %><a href="https://wa.me/<%= settings.store_whatsapp.replace(/\D/g, '') %>" target="_blank" rel="noopener" aria-label="WhatsApp"><svg class="icon"><use href="#i-whatsapp"/></svg></a><% } %>
+      </div>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>© <%= new Date().getFullYear() %> <%= settings.store_name %> · amritakalakriti.com · Handmade in India</p>
+    <p class="pay-methods"><svg class="icon"><use href="#i-lock"/></svg> Secure payments: UPI · Cards · Net Banking · Wallets<%= settings.cod_enabled === '1' ? ' · Cash on Delivery' : '' %></p>
+  </div>
+</footer>
+
+<div class="toast" data-toast role="status" aria-live="polite" hidden></div>
+</body>
+</html>

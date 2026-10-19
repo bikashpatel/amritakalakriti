@@ -1,0 +1,82 @@
+<%- include('../partials/header') %>
+<% const steps = ['confirmed', 'processing', 'shipped', 'delivered']; const reached = steps.indexOf(order.status); %>
+<section class="page-hero" style="padding-bottom: 32px">
+  <div class="container">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/account/orders">My orders</a><span aria-hidden="true">✦</span><span><%= order.order_number %></span></nav>
+    <h1>Order <%= order.order_number %></h1>
+    <p>Placed on <%= h.formatDate(order.created_at, true) %></p>
+  </div>
+</section>
+<div class="container account-layout">
+  <%- include('_nav') %>
+  <div style="display:grid;gap:18px">
+    <div class="card card-pad">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge status-<%= order.status %>"><%= h.ORDER_STATUS_LABELS[order.status] %></span>
+          <span class="badge pay-<%= order.payment_status %>">Payment: <%= order.payment_status %></span>
+        </div>
+        <% if (order.status === 'pending' && order.payment_status !== 'paid') { %>
+          <a class="btn btn-gold btn-sm" href="/checkout/pay/<%= order.order_number %>">Complete payment</a>
+        <% } %>
+      </div>
+      <% if (order.status !== 'cancelled' && order.status !== 'pending') { %>
+        <div class="progress-track" aria-label="Order progress">
+          <% steps.forEach((s, i) => { %><div class="<%= i <= reached ? 'is-done' : '' %>"><%= h.ORDER_STATUS_LABELS[s] %></div><% }) %>
+        </div>
+      <% } %>
+      <% if (order.tracking_number) { %>
+        <div class="alert alert-info" style="margin:16px 0 0"><svg class="icon"><use href="#i-truck"/></svg><span>Shipped with <strong><%= order.courier || 'our courier partner' %></strong> · Tracking number <strong><%= order.tracking_number %></strong></span></div>
+      <% } %>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1.4rem">Items</h3>
+      <div class="mini-lines">
+        <% items.forEach(it => { %>
+          <div class="mini-line">
+            <span class="mini-thumb"><img src="<%= it.image %>" alt=""><% if (it.quantity > 1) { %><b><%= it.quantity %></b><% } %></span>
+            <span><strong><% if (it.slug) { %><a href="/art/<%= it.slug %>"><%= it.title %></a><% } else { %><%= it.title %><% } %></strong><span class="muted small"><%= formatINR(it.price) %><%= it.quantity > 1 ? ` × ${it.quantity}` : '' %></span></span>
+            <span><%= formatINR(it.price * it.quantity) %></span>
+          </div>
+        <% }) %>
+      </div>
+      <div class="summary-row"><span>Subtotal</span><span><%= formatINR(order.subtotal) %></span></div>
+      <div class="summary-row"><span>Shipping</span><span><%= order.shipping ? formatINR(order.shipping) : 'Free' %></span></div>
+      <div class="summary-row total"><span>Total</span><span class="price"><%= formatINR(order.total) %></span></div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="card card-pad">
+        <h3 style="font-size:1.3rem">Delivery address</h3>
+        <address class="address-block">
+          <strong><%= order.ship_name %></strong><br>
+          <%= order.ship_line1 %><br>
+          <% if (order.ship_line2) { %><%= order.ship_line2 %><br><% } %>
+          <%= order.ship_city %>, <%= order.ship_state %> <%= order.ship_pincode %><br>
+          <span class="muted"><%= order.ship_phone %> · <%= order.ship_email %></span>
+        </address>
+        <% if (order.customer_note) { %><p class="muted small" style="margin-top:12px">Note: <%= order.customer_note %></p><% } %>
+      </div>
+      <div class="card card-pad">
+        <h3 style="font-size:1.3rem">Order journey</h3>
+        <ol class="timeline">
+          <% history.forEach(e => { %>
+            <li><strong><%= h.ORDER_STATUS_LABELS[e.status] || e.status %></strong><% if (e.note) { %><div class="small"><%= e.note %></div><% } %><small><%= h.formatDate(e.created_at, true) %></small></li>
+          <% }) %>
+        </ol>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <% if (canCancel) { %>
+        <form action="/account/orders/<%= order.order_number %>/cancel" method="post" data-confirm="Cancel this order? The artwork will be released for others to buy.">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-danger btn-sm" type="submit">Cancel order</button>
+        </form>
+      <% } %>
+      <a class="btn btn-ghost btn-sm" href="/contact?subject=<%= encodeURIComponent('Order ' + order.order_number) %>"><svg class="icon"><use href="#i-message"/></svg> Need help with this order?</a>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

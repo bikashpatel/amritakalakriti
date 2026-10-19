@@ -1,0 +1,25 @@
+<% if (pg.pages > 1) {
+  const from = pg.offset + 1, to = Math.min(pg.total, pg.offset + pg.perPage);
+  const nums = [];
+  for (let i = 1; i <= pg.pages; i++) {
+    if (i === 1 || i === pg.pages || Math.abs(i - pg.page) <= 1) nums.push(i);
+    else if (nums[nums.length - 1] !== '…') nums.push('…');
+  }
+%>
+<nav class="pager" aria-label="Pagination">
+  <p class="pager-info"><%= from %>–<%= to %> of <%= pg.total %></p>
+  <div class="pager-links">
+    <% if (pg.page > 1) { %>
+      <a class="pager-link" href="<%= pageUrl(pg.page - 1) %>" aria-label="Previous page"><svg class="icon"><use href="#i-chevron-left"/></svg></a>
+    <% } %>
+    <% nums.forEach((n) => { %>
+      <% if (n === '…') { %><span class="pager-gap">…</span>
+      <% } else if (n === pg.page) { %><span class="pager-link is-current" aria-current="page"><%= n %></span>
+      <% } else { %><a class="pager-link" href="<%= pageUrl(n) %>"><%= n %></a><% } %>
+    <% }) %>
+    <% if (pg.page < pg.pages) { %>
+      <a class="pager-link" href="<%= pageUrl(pg.page + 1) %>" aria-label="Next page"><svg class="icon"><use href="#i-chevron-right"/></svg></a>
+    <% } %>
+  </div>
+</nav>
+<% } %>

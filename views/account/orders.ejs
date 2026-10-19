@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+<section class="page-hero" style="padding-bottom: 32px">
+  <div class="container"><h1>My account</h1><p>Your orders, favourites and details in one place.</p></div>
+</section>
+<div class="container account-layout">
+  <%- include('_nav') %>
+  <div>
+    <h2 style="font-size:1.9rem">My orders</h2>
+    <% if (!orders.length) { %>
+      <div class="empty card">
+        <svg class="icon"><use href="#i-package"/></svg>
+        <h3>No orders yet</h3>
+        <p>When you bring an artwork home, you will be able to follow its journey here.</p>
+        <a class="btn btn-gold" href="/shop">Explore the collection</a>
+      </div>
+    <% } else { %>
+      <div class="card">
+        <% orders.forEach(o => { %>
+          <a class="order-row" href="/account/orders/<%= o.order_number %>">
+            <span class="mini-thumb"><% if (o.thumb) { %><img src="<%= o.thumb %>" alt=""><% } %></span>
+            <div>
+              <h3><%= o.order_number %></h3>
+              <p><%= h.formatDate(o.created_at) %> · <%= o.item_count %> <%= o.item_count === 1 ? 'item' : 'items' %> · <%= h.PAYMENT_METHOD_LABELS[o.payment_method] %></p>
+            </div>
+            <span class="badge status-<%= o.status %>"><%= h.ORDER_STATUS_LABELS[o.status] %></span>
+            <span class="price" style="font-size:1.25rem"><%= formatINR(o.total) %></span>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

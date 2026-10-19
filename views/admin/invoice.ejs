@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · <%= settings.store_name %></title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/images/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <script src="/js/admin.js" defer></script>
+</head>
+<body class="inv-body">
+<%- include('../partials/icons') %>
+<%
+  const o = order;
+  const itemCount = items.reduce((s, i) => s + i.quantity, 0);
+  const billName = customer ? customer.name : o.ship_name;
+  const billEmail = customer ? customer.email : o.ship_email;
+%>
+<div class="inv-toolbar no-print">
+  <a class="btn btn-ghost btn-sm" href="/admin/orders/<%= o.id %>"><svg class="icon"><use href="#i-arrow-left"/></svg>Back to order</a>
+  <div class="inv-toolbar-right">
+    <a class="btn btn-ghost btn-sm" href="/admin/orders/<%= o.id %>/invoice<%= slip ? '' : '?type=slip' %>"><%= slip ? 'Show invoice' : 'Show packing slip' %></a>
+    <button class="btn btn-gold btn-sm" type="button" data-print><svg class="icon"><use href="#i-download"/></svg>Print</button>
+  </div>
+</div>
+
+<article class="invoice">
+  <header class="inv-head">
+    <div class="inv-brand">
+      <img src="/images/emblem-sm.png" alt="" width="110" height="72">
+      <div>
+        <img class="inv-wordmark" src="/images/wordmark-sm.png" alt="<%= settings.store_name %>" width="230" height="53">
+        <% if (settings.store_tagline) { %><p class="inv-tagline"><%= settings.store_tagline %></p><% } %>
+      </div>
+    </div>
+    <div class="inv-title">
+      <p class="inv-kind"><%= slip ? 'Packing slip' : 'Invoice' %></p>
+      <p class="inv-number mono"><%= o.order_number %></p>
+      <p class="inv-date">Date: <%= h.formatDate(o.created_at) %></p>
+    </div>
+  </header>
+
+  <section class="inv-parties">
+    <div>
+      <p class="inv-label">From</p>
+      <p><strong><%= settings.store_name %></strong></p>
+      <% if (settings.store_address) { %><p class="prewrap"><%= settings.store_address %></p><% } %>
+      <p><%= settings.store_email %><% if (settings.store_phone) { %><br><%= settings.store_phone %><% } %></p>
+      <% if (settings.gstin) { %><p>GSTIN: <span class="mono"><%= settings.gstin %></span></p><% } %>
+    </div>
+    <% if (!slip) { %>
+      <div>
+        <p class="inv-label">Bill to</p>
+        <p><strong><%= billName %></strong></p>
+        <p><%= billEmail %><br><%= o.ship_phone %></p>
+      </div>
+    <% } %>
+    <div>
+      <p class="inv-label">Ship to</p>
+      <p><strong><%= o.ship_name %></strong></p>
+      <p><%= o.ship_line1 %><% if (o.ship_line2) { %><br><%= o.ship_line2 %><% } %><br><%= o.ship_city %>, <%= o.ship_state %> <%= o.ship_pincode %><br>India</p>
+      <p><%= o.ship_phone %></p>
+    </div>
+  </section>
+
+  <table class="inv-items">
+    <thead>
+      <tr>
+        <th class="inv-n">#</th>
+        <th>Item</th>
+        <% if (!slip) { %><th class="num">Price</th><% } %>
+        <th class="num">Qty</th>
+        <% if (!slip) { %><th class="num">Amount</th><% } else { %><th class="center">Packed</th><% } %>
+      </tr>
+    </thead>
+    <tbody>
+      <% items.forEach((it, i) => { %>
+        <tr>
+          <td class="inv-n"><%= i + 1 %></td>
+          <td>
+            <strong><%= it.title %></strong>
+            <% if (it.product_sku) { %><span class="inv-sku">SKU <%= it.product_sku %></span><% } %>
+          </td>
+          <% if (!slip) { %><td class="num"><%= formatINR(it.price) %></td><% } %>
+          <td class="num"><%= it.quantity %></td>
+          <% if (!slip) { %><td class="num"><%= formatINR(it.price * it.quantity) %></td><% } else { %><td class="center"><span class="inv-box"></span></td><% } %>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <div class="inv-foot">
+    <div class="inv-meta">
+      <% if (!slip) { %>
+        <p><span class="inv-label">Payment</span><%= PAYMENT_METHOD_LABELS[o.payment_method] %> — <strong><%= o.payment_status === 'paid' ? 'Paid' : o.payment_status === 'refunded' ? 'Refunded' : o.payment_method === 'cod' ? 'To be collected on delivery' : 'Not paid' %></strong></p>
+        <% if (o.razorpay_payment_id) { %><p class="small">Payment ref: <span class="mono"><%= o.razorpay_payment_id %></span></p><% } %>
+      <% } else { %>
+        <p><span class="inv-label">Contents</span><%= itemCount %> item<%= itemCount === 1 ? '' : 's' %><% if (o.payment_method === 'cod' && o.payment_status !== 'paid') { %> · <strong>Collect <%= formatINR(o.total) %> on delivery</strong><% } %></p>
+      <% } %>
+      <% if (o.courier || o.tracking_number) { %><p class="small">Shipped via <%= o.courier || '—' %><% if (o.tracking_number) { %> · <span class="mono"><%= o.tracking_number %></span><% } %></p><% } %>
+      <% if (o.customer_note) { %><p class="small"><span class="inv-label">Customer note</span><span class="prewrap"><%= o.customer_note %></span></p><% } %>
+    </div>
+    <% if (!slip) { %>
+      <dl class="inv-totals">
+        <div><dt>Subtotal</dt><dd><%= formatINR(o.subtotal) %></dd></div>
+        <div><dt>Shipping</dt><dd><%= o.shipping ? formatINR(o.shipping) : 'Free' %></dd></div>
+        <div class="inv-grand"><dt>Total</dt><dd><%= formatINR(o.total) %></dd></div>
+      </dl>
+    <% } %>
+  </div>
+
+  <footer class="inv-thanks">
+    <svg class="icon"><use href="#i-lotus"/></svg>
+    <p>Thank you for bringing handmade art home. Every piece is made by hand and is one of a kind.</p>
+    <p class="small"><%= settings.store_email %><% if (settings.store_phone) { %> · <%= settings.store_phone %><% } %> · amritakalakriti.com</p>
+    <% if (!slip) { %><p class="inv-fineprint">This is a computer-generated invoice and does not need a signature.</p><% } %>
+  </footer>
+</article>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<%- include('../partials/header') %>
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow"><svg class="icon"><use href="#i-lotus"/></svg> Art · Craft · Creativity</p>
+      <h1><%= settings.hero_title %></h1>
+      <p class="hero-script"><%= settings.store_tagline %></p>
+      <p class="lead"><%= settings.hero_subtitle %></p>
+      <div class="btn-row">
+        <a class="btn btn-gold btn-lg" href="/shop">Explore the collection <svg class="icon"><use href="#i-arrow-right"/></svg></a>
+        <a class="btn btn-outline btn-lg" href="/contact?subject=Custom%20commission">Commission a painting</a>
+      </div>
+      <ul class="hero-stats">
+        <li><strong><%= counts.artworks %></strong><span>Original works</span></li>
+        <li><strong><%= navCategories.length %></strong><span>Art forms</span></li>
+        <li><strong>100%</strong><span>Handmade</span></li>
+      </ul>
+    </div>
+
+    <div class="hero-art" aria-hidden="true">
+      <div class="hero-ring"></div>
+      <% if (heroArt[0]) { %><a href="/art/<%= heroArt[0].slug %>" tabindex="-1"><figure class="hero-frame hero-frame-main"><img src="<%= heroArt[0].image %>" alt="" fetchpriority="high"></figure></a><% } %>
+      <% if (heroArt[1]) { %><a href="/art/<%= heroArt[1].slug %>" tabindex="-1"><figure class="hero-frame hero-frame-round"><img src="<%= heroArt[1].image %>" alt=""></figure></a><% } %>
+      <% if (heroArt[2]) { %><a href="/art/<%= heroArt[2].slug %>" tabindex="-1"><figure class="hero-frame hero-frame-card"><img src="<%= heroArt[2].image %>" alt=""></figure></a><% } %>
+      <div class="hero-badge"><div><strong>1 of 1</strong>Original<br>artworks</div></div>
+      <svg class="icon hero-lotus l1"><use href="#i-lotus"/></svg>
+      <svg class="icon hero-lotus l2"><use href="#i-lotus"/></svg>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="lotus-rule"><svg class="icon"><use href="#i-lotus"/></svg></div>
+      <h2>Shop by art form</h2>
+      <p>From the temple scrolls of Odisha to the mud walls of Mithila — explore India’s living art traditions, each painted by hand.</p>
+    </div>
+    <div class="forms-grid">
+      <% navCategories.forEach((c, i) => { %>
+        <a class="form-card reveal" href="/shop/<%= c.slug %>" style="transition-delay: <%= (i % 4) * 70 %>ms">
+          <span class="form-arch"><% if (c.image) { %><img src="<%= c.image %>" alt="" loading="lazy"><% } %></span>
+          <span class="form-name"><%= c.name %></span>
+          <span class="form-count"><%= c.product_count %> <%= c.product_count === 1 ? 'artwork' : 'artworks' %></span>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head reveal">
+      <p class="eyebrow"><svg class="icon"><use href="#i-sparkle"/></svg> Curated for you</p>
+      <h2>Featured artworks</h2>
+      <p>Hand-picked originals from the studio — each one signed, certified and ready to bring a story into your home.</p>
+    </div>
+    <div class="product-grid">
+      <% featured.forEach(p => { %><div class="reveal"><%- include('../partials/product-card', { p }) %></div><% }) %>
+    </div>
+    <div class="center" style="margin-top: 48px">
+      <a class="btn btn-outline" href="/shop">View all artworks <svg class="icon"><use href="#i-arrow-right"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt story">
+  <div class="container story-grid">
+    <div class="story-visual reveal">
+      <img src="/images/logo-mark.png" alt="AmritaKalakriti logo — a lotus and paintbrush entwined with the letter A" loading="lazy">
+    </div>
+    <div class="story-copy reveal">
+      <p class="eyebrow"><svg class="icon"><use href="#i-brush"/></svg> Our story</p>
+      <h2>Art that carries the warmth <em class="script">of the hand that made it</em></h2>
+      <p class="lead"><%= settings.about_short %></p>
+      <blockquote>“Every brushstroke is a quiet prayer; every painting, a story waiting for its home.”</blockquote>
+      <a class="btn btn-dark" href="/about">Read our story</a>
+    </div>
+  </div>
+</section>
+
+<% if (newest.length) { %>
+<section class="section">
+  <div class="container">
+    <div class="section-head-row reveal">
+      <div>
+        <p class="eyebrow"><svg class="icon"><use href="#i-lotus"/></svg> Fresh from the easel</p>
+        <h2>New arrivals</h2>
+      </div>
+      <a class="btn btn-ghost" href="/shop?sort=newest">See all new work <svg class="icon"><use href="#i-arrow-right"/></svg></a>
+    </div>
+    <div class="product-grid">
+      <% newest.forEach(p => { %><div class="reveal"><%- include('../partials/product-card', { p }) %></div><% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="promise">
+      <div class="promise-item reveal"><span class="promise-icon"><svg class="icon"><use href="#i-brush"/></svg></span><h3>Original &amp; handmade</h3><p>No prints, no shortcuts — painted by hand.</p></div>
+      <div class="promise-item reveal"><span class="promise-icon"><svg class="icon"><use href="#i-award"/></svg></span><h3>Certificate of authenticity</h3><p>Signed and certified, with every artwork.</p></div>
+      <div class="promise-item reveal"><span class="promise-icon"><svg class="icon"><use href="#i-package"/></svg></span><h3>Safe, careful packing</h3><p>Corner guards, rigid boxes, insured transit.</p></div>
+      <div class="promise-item reveal"><span class="promise-icon"><svg class="icon"><use href="#i-truck"/></svg></span><h3>Pan-India delivery</h3><p>Free shipping above <%= formatINR(settings.free_shipping_min) %>.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0">
+  <div class="container">
+    <div class="commission reveal">
+      <div>
+        <p class="eyebrow"><svg class="icon"><use href="#i-sparkle"/></svg> Custom commissions</p>
+        <h2>Have a wall, a memory or a gift in mind? <em>Let’s paint it together.</em></h2>
+        <p>Family portraits in Madhubani style, a Pattachitra for your pooja room, a watercolour of the home you grew up in — tell us your story and we will bring it to life.</p>
+        <a class="btn btn-gold btn-lg" href="/contact?subject=Custom%20commission">Start a commission</a>
+      </div>
+      <ol class="commission-steps">
+        <li><b>1</b><div><strong>Share your idea</strong><span>Size, style, colours and the story behind it.</span></div></li>
+        <li><b>2</b><div><strong>Approve a sketch</strong><span>We send a sketch and quote before we paint.</span></div></li>
+        <li><b>3</b><div><strong>Receive your art</strong><span>Painted, certified and shipped to your door.</span></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>

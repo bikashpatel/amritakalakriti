@@ -1,0 +1,218 @@
+<%- include('partials/top') %>
+<%
+  const fe = (k) => (errors[k] ? ' has-error' : '');
+  const pe = (k) => (pwErrors[k] ? ' has-error' : '');
+  const v = (k) => form[k] ?? '';
+  const hasErrors = Object.keys(errors).length > 0;
+%>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead">Store details, homepage words, shipping and payment options. Changes show on the storefront immediately.</p>
+  </div>
+</div>
+
+<nav class="tabs tabs-anchors" aria-label="Settings sections">
+  <a class="tab" href="#store">Store details</a>
+  <a class="tab" href="#homepage">Homepage</a>
+  <a class="tab" href="#shipping">Shipping</a>
+  <a class="tab" href="#payments">Payments</a>
+  <a class="tab" href="#social">Social links</a>
+  <a class="tab" href="#password">My password</a>
+</nav>
+
+<% if (hasErrors) { %>
+  <div class="alert alert-error"><svg class="icon"><use href="#i-alert"/></svg><div>Nothing was saved yet — please check the highlighted fields.<% if (errors.payments) { %> <%= errors.payments %><% } %></div></div>
+<% } %>
+
+<form method="post" action="/admin/settings" class="settings-form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <section class="card card-pad form-card settings-section" id="store">
+    <div class="settings-intro">
+      <h2 class="form-card-title">Store details</h2>
+      <p class="hint">Used in the header, footer, emails and on invoices.</p>
+    </div>
+    <div class="settings-fields">
+      <div class="form-row">
+        <div class="field<%= fe('store_name') %>">
+          <label for="s-name">Store name</label>
+          <input id="s-name" type="text" name="store_name" value="<%= v('store_name') %>" maxlength="80" required>
+          <%- include('partials/err', { msg: errors.store_name }) %>
+        </div>
+        <div class="field">
+          <label for="s-tagline">Tagline</label>
+          <input id="s-tagline" type="text" name="store_tagline" value="<%= v('store_tagline') %>" maxlength="160">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field<%= fe('store_email') %>">
+          <label for="s-email">Email</label>
+          <input id="s-email" type="email" name="store_email" value="<%= v('store_email') %>" maxlength="120" required>
+          <%- include('partials/err', { msg: errors.store_email }) %>
+        </div>
+        <div class="field">
+          <label for="s-phone">Phone</label>
+          <input id="s-phone" type="tel" name="store_phone" value="<%= v('store_phone') %>" maxlength="40">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field<%= fe('store_whatsapp') %>">
+          <label for="s-wa">WhatsApp number</label>
+          <input id="s-wa" type="text" name="store_whatsapp" value="<%= v('store_whatsapp') %>" maxlength="20" inputmode="numeric" placeholder="919876543210">
+          <%- include('partials/err', { msg: errors.store_whatsapp }) %>
+          <p class="hint">Country code and number, digits only. Leave blank to hide the WhatsApp button.</p>
+        </div>
+        <div class="field<%= fe('gstin') %>">
+          <label for="s-gstin">GSTIN <span class="optional">optional</span></label>
+          <input id="s-gstin" type="text" name="gstin" value="<%= v('gstin') %>" maxlength="15" autocomplete="off" class="mono-input" placeholder="21ABCDE1234F1Z5">
+          <%- include('partials/err', { msg: errors.gstin }) %>
+          <p class="hint">Printed on invoices when set.</p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="s-address">Address</label>
+        <textarea id="s-address" name="store_address" rows="3" maxlength="500"><%= v('store_address') %></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card-pad form-card settings-section" id="homepage">
+    <div class="settings-intro">
+      <h2 class="form-card-title">Homepage</h2>
+      <p class="hint">The words visitors see first.</p>
+    </div>
+    <div class="settings-fields">
+      <div class="field">
+        <label for="s-announce">Announcement bar</label>
+        <input id="s-announce" type="text" name="announcement" value="<%= v('announcement') %>" maxlength="240">
+        <p class="hint">The thin strip at the very top of every page. Leave blank to hide it.</p>
+      </div>
+      <div class="field">
+        <label for="s-hero-title">Hero title</label>
+        <input id="s-hero-title" type="text" name="hero_title" value="<%= v('hero_title') %>" maxlength="140">
+      </div>
+      <div class="field">
+        <label for="s-hero-sub">Hero subtitle</label>
+        <textarea id="s-hero-sub" name="hero_subtitle" rows="3" maxlength="500"><%= v('hero_subtitle') %></textarea>
+      </div>
+      <div class="field">
+        <label for="s-about">About (short)</label>
+        <textarea id="s-about" name="about_short" rows="5" maxlength="2000"><%= v('about_short') %></textarea>
+        <p class="hint">The short story shown on the homepage. The full story lives in <a class="link" href="/admin/pages/about/edit">Pages → Our Story</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card-pad form-card settings-section" id="shipping">
+    <div class="settings-intro">
+      <h2 class="form-card-title">Shipping</h2>
+      <p class="hint">Charged once per order, in whole rupees.</p>
+    </div>
+    <div class="settings-fields">
+      <div class="form-row">
+        <div class="field<%= fe('shipping_fee') %>">
+          <label for="s-ship">Shipping fee (₹)</label>
+          <input id="s-ship" type="text" name="shipping_fee" value="<%= v('shipping_fee') %>" inputmode="numeric">
+          <%- include('partials/err', { msg: errors.shipping_fee }) %>
+          <p class="hint">Use 0 for free shipping on every order.</p>
+        </div>
+        <div class="field<%= fe('free_shipping_min') %>">
+          <label for="s-free">Free shipping from (₹)</label>
+          <input id="s-free" type="text" name="free_shipping_min" value="<%= v('free_shipping_min') %>" inputmode="numeric">
+          <%- include('partials/err', { msg: errors.free_shipping_min }) %>
+          <p class="hint">Orders at or above this are shipped free. Use 0 to always charge the fee.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card-pad form-card settings-section<%= errors.payments ? ' has-error' : '' %>" id="payments">
+    <div class="settings-intro">
+      <h2 class="form-card-title">Payments</h2>
+      <p class="hint">Which ways customers can pay at checkout.</p>
+    </div>
+    <div class="settings-fields">
+      <label class="check check-block">
+        <input type="checkbox" name="online_payments_enabled" value="1"<%= v('online_payments_enabled') === '1' ? ' checked' : '' %>>
+        <span><strong>Online payments</strong><span class="hint">UPI, cards, net banking and wallets through Razorpay<%= razorpay.live ? '' : ' (simulated while in demo mode)' %>.</span></span>
+      </label>
+      <label class="check check-block">
+        <input type="checkbox" name="cod_enabled" value="1"<%= v('cod_enabled') === '1' ? ' checked' : '' %>>
+        <span><strong>Cash on delivery</strong><span class="hint">The customer pays the courier when the parcel arrives.</span></span>
+      </label>
+      <%- include('partials/err', { msg: errors.payments }) %>
+
+      <div class="status-panel <%= razorpay.live ? 'is-live' : 'is-demo' %>">
+        <p class="status-panel-title"><span class="dot" aria-hidden="true"></span>Razorpay: <%= razorpay.live ? `connected (${razorpay.keyMode.toLowerCase()})` : 'demo mode' %></p>
+        <dl class="kv">
+          <div><dt>RAZORPAY_KEY_ID</dt><dd><%= razorpay.live ? 'Set' : 'Not set' %></dd></div>
+          <div><dt>RAZORPAY_KEY_SECRET</dt><dd><%= razorpay.live ? 'Set' : 'Not set' %></dd></div>
+          <div><dt>RAZORPAY_WEBHOOK_SECRET</dt><dd><%= razorpay.webhook ? 'Set' : 'Not set (recommended)' %></dd></div>
+        </dl>
+        <p class="hint">Keys are read from the server’s <code>.env</code> file and are never shown here. Restart the server after changing them.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card-pad form-card settings-section" id="social">
+    <div class="settings-intro">
+      <h2 class="form-card-title">Social links</h2>
+      <p class="hint">Shown in the footer. Leave blank to hide one.</p>
+    </div>
+    <div class="settings-fields">
+      <% [['instagram_url', 'Instagram', 'i-instagram'], ['facebook_url', 'Facebook', 'i-facebook'], ['youtube_url', 'YouTube', 'i-youtube']].forEach(([key, label, icon]) => { %>
+        <div class="field<%= fe(key) %>">
+          <label for="s-<%= key %>"><%= label %></label>
+          <div class="input-icon"><svg class="icon"><use href="#<%= icon %>"/></svg><input id="s-<%= key %>" type="url" name="<%= key %>" value="<%= v(key) %>" maxlength="500" placeholder="https://"></div>
+          <%- include('partials/err', { msg: errors[key] }) %>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+
+  <% if (extraKeys.length) { %>
+    <section class="card card-pad form-card settings-section" id="other">
+      <div class="settings-intro"><h2 class="form-card-title">Other</h2></div>
+      <div class="settings-fields">
+        <% extraKeys.forEach((key) => { %>
+          <div class="field"><label for="s-x-<%= key %>"><%= key.replace(/_/g, ' ') %></label><input id="s-x-<%= key %>" type="text" name="<%= key %>" value="<%= v(key) %>" maxlength="500"></div>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
+  <div class="save-bar">
+    <button class="btn btn-gold" type="submit"><svg class="icon"><use href="#i-check"/></svg>Save settings</button>
+  </div>
+</form>
+
+<section class="card card-pad form-card settings-section" id="password">
+  <div class="settings-intro">
+    <h2 class="form-card-title">Change my password</h2>
+    <p class="hint">For <%= user.email %>. At least 8 characters.</p>
+  </div>
+  <form method="post" action="/admin/settings/password" class="settings-fields" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field<%= pe('current_password') %>">
+      <label for="pw-current">Current password</label>
+      <input id="pw-current" type="password" name="current_password" autocomplete="current-password" required>
+      <%- include('partials/err', { msg: pwErrors.current_password }) %>
+    </div>
+    <div class="form-row">
+      <div class="field<%= pe('new_password') %>">
+        <label for="pw-new">New password</label>
+        <input id="pw-new" type="password" name="new_password" minlength="8" maxlength="72" autocomplete="new-password" required>
+        <%- include('partials/err', { msg: pwErrors.new_password }) %>
+      </div>
+      <div class="field<%= pe('confirm_password') %>">
+        <label for="pw-confirm">Confirm new password</label>
+        <input id="pw-confirm" type="password" name="confirm_password" minlength="8" maxlength="72" autocomplete="new-password" required>
+        <%- include('partials/err', { msg: pwErrors.confirm_password }) %>
+      </div>
+    </div>
+    <div><button class="btn btn-dark btn-sm" type="submit"><svg class="icon"><use href="#i-lock"/></svg>Change password</button></div>
+  </form>
+</section>
+
+<%- include('partials/bottom') %>

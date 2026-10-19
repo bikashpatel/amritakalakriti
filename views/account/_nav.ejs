@@ -1,0 +1,15 @@
+<aside class="card account-nav">
+  <div class="account-hello">
+    <span class="eyebrow" style="margin-bottom:6px">Namaste</span>
+    <strong><%= user.name %></strong>
+    <small><%= user.email %></small>
+  </div>
+  <a href="/account/orders" class="<%= accountNav === 'orders' ? 'is-active' : '' %>"><svg class="icon"><use href="#i-package"/></svg> My orders</a>
+  <a href="/account/wishlist" class="<%= accountNav === 'wishlist' ? 'is-active' : '' %>"><svg class="icon"><use href="#i-heart"/></svg> Wishlist</a>
+  <a href="/account/profile" class="<%= accountNav === 'profile' ? 'is-active' : '' %>"><svg class="icon"><use href="#i-user"/></svg> Profile &amp; address</a>
+  <% if (user.role === 'admin') { %><a href="/admin"><svg class="icon"><use href="#i-grid"/></svg> Admin panel</a><% } %>
+  <form action="/logout" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit"><svg class="icon"><use href="#i-logout"/></svg> Sign out</button>
+  </form>
+</aside>

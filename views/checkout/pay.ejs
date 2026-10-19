@@ -1,0 +1,72 @@
+<%- include('../partials/header') %>
+
+<section class="page-hero" style="padding-bottom: 28px">
+  <div class="container">
+    <h1>Complete your payment</h1>
+    <div class="checkout-steps" aria-label="Checkout progress">
+      <span class="is-done"><b>✓</b> Cart</span><i></i>
+      <span class="is-done"><b>✓</b> Delivery</span><i></i>
+      <span class="is-current"><b>3</b> Payment</span>
+    </div>
+  </div>
+</section>
+
+<div class="container" style="padding-bottom: 72px">
+  <div class="card pay-card">
+    <p class="eyebrow">Order <%= order.order_number %></p>
+    <div class="pay-amount"><%= formatINR(order.total) %></div>
+    <p class="muted"><%= items.length %> <%= items.length === 1 ? 'artwork' : 'artworks' %> · delivering to <%= order.ship_city %>, <%= order.ship_state %></p>
+
+    <div class="mini-lines" style="text-align:left;margin-top:20px">
+      <% items.forEach(it => { %>
+        <div class="mini-line">
+          <span class="mini-thumb"><img src="<%= it.image %>" alt=""><% if (it.quantity > 1) { %><b><%= it.quantity %></b><% } %></span>
+          <span><strong><%= it.title %></strong></span>
+          <span><%= formatINR(it.price * it.quantity) %></span>
+        </div>
+      <% }) %>
+    </div>
+
+    <% if (mode === 'razorpay') { %>
+      <button class="btn btn-gold btn-lg btn-block" type="button" data-razorpay
+        data-key="<%= rzp.key %>" data-order-id="<%= rzp.orderId %>" data-amount="<%= rzp.amount %>"
+        data-name="<%= settings.store_name %>" data-description="Order <%= order.order_number %>"
+        data-prefill-name="<%= order.ship_name %>" data-prefill-email="<%= order.ship_email %>" data-prefill-contact="<%= order.ship_phone %>"
+        data-image="/images/icon-512.png">
+        <svg class="icon"><use href="#i-lock"/></svg> Pay <%= formatINR(order.total) %> securely
+      </button>
+      <form action="/checkout/verify" method="post" data-razorpay-form hidden>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="order_number" value="<%= order.order_number %>">
+        <input type="hidden" name="razorpay_order_id">
+        <input type="hidden" name="razorpay_payment_id">
+        <input type="hidden" name="razorpay_signature">
+      </form>
+      <p class="summary-note"><svg class="icon"><use href="#i-shield"/></svg> UPI · Cards · Net Banking · Wallets — powered by Razorpay</p>
+      <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+    <% } else { %>
+      <div class="demo-gateway">
+        <h3><svg class="icon"><use href="#i-info"/></svg> Demo payment gateway</h3>
+        <p class="small muted" style="margin:0">Real payments are not switched on yet, so this step simulates Razorpay. <strong>No money will be charged.</strong> The store owner can enable live payments by adding Razorpay keys.</p>
+        <div class="demo-methods"><span>UPI</span><span>Card</span><span>Net Banking</span><span>Wallet</span></div>
+        <div class="demo-actions">
+          <form action="/checkout/demo-pay/<%= order.order_number %>" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="outcome" value="success">
+            <button class="btn btn-gold btn-block" type="submit"><svg class="icon"><use href="#i-check"/></svg> Simulate successful payment</button>
+          </form>
+          <form action="/checkout/demo-pay/<%= order.order_number %>" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="outcome" value="fail">
+            <button class="btn btn-outline btn-block" type="submit">Simulate failure</button>
+          </form>
+        </div>
+      </div>
+    <% } %>
+
+    <p class="pay-timer"><svg class="icon"><use href="#i-clock"/></svg> We are holding these pieces for you for <%= expiresMinutes %> minutes.</p>
+    <p style="margin-top:8px"><a class="link small" href="/cart">Changed your mind? Return to cart</a></p>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

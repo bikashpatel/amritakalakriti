@@ -1,0 +1,54 @@
+<%- include('../partials/header') %>
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow"><svg class="icon"><use href="#i-lotus"/></svg> Say namaste</p>
+    <h1>Let’s talk art</h1>
+    <p>Questions about an artwork, a custom commission or an order? Write to us — we reply within one working day.</p>
+  </div>
+</section>
+<div class="container contact-layout">
+  <div class="contact-cards">
+    <% if (settings.store_whatsapp) { %>
+      <a class="card contact-card" href="https://wa.me/<%= settings.store_whatsapp.replace(/\D/g, '') %>" target="_blank" rel="noopener">
+        <svg class="icon"><use href="#i-whatsapp"/></svg>
+        <div><strong>WhatsApp</strong><p>Quickest for commissions — share photos and ideas.</p></div>
+      </a>
+    <% } %>
+    <% if (settings.store_email) { %>
+      <a class="card contact-card" href="mailto:<%= settings.store_email %>">
+        <svg class="icon"><use href="#i-mail"/></svg>
+        <div><strong>Email</strong><p><%= settings.store_email %></p></div>
+      </a>
+    <% } %>
+    <% if (settings.store_phone) { %>
+      <a class="card contact-card" href="tel:<%= settings.store_phone.replace(/\s/g, '') %>">
+        <svg class="icon"><use href="#i-phone"/></svg>
+        <div><strong>Call</strong><p><%= settings.store_phone %> · Mon–Sat, 10am–6pm</p></div>
+      </a>
+    <% } %>
+    <div class="card contact-card">
+      <svg class="icon"><use href="#i-brush"/></svg>
+      <div><strong>Custom commissions</strong><p>Tell us the size, style, colours and story. We will send a sketch and quote before we start painting.</p></div>
+    </div>
+  </div>
+
+  <form class="card form-section" action="/contact" method="post" style="margin:0">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h2>Send a message</h2>
+    <% if (typeof errors !== 'undefined' && errors.length) { %>
+      <div class="alert alert-error"><svg class="icon"><use href="#i-alert"/></svg><ul class="error-list"><% errors.forEach(e => { %><li><%= e %></li><% }) %></ul></div>
+    <% } %>
+    <div class="form-row">
+      <div class="field"><label for="c-name">Your name</label><input id="c-name" name="name" value="<%= form.name || (user ? user.name : '') %>" required></div>
+      <div class="field"><label for="c-email">Email</label><input id="c-email" name="email" type="email" value="<%= form.email || (user ? user.email : '') %>" required></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label for="c-phone">Phone <span class="muted">(optional)</span></label><input id="c-phone" name="phone" type="tel" value="<%= form.phone || (user && user.phone ? user.phone : '') %>"></div>
+      <div class="field"><label for="c-subject">Subject</label><input id="c-subject" name="subject" value="<%= form.subject || '' %>" placeholder="e.g. Custom commission"></div>
+    </div>
+    <div class="field"><label for="c-message">Message</label><textarea id="c-message" name="message" required placeholder="Tell us about the artwork you have in mind…"><%= form.message || '' %></textarea></div>
+    <div class="hp-field" aria-hidden="true"><label for="c-website">Website</label><input id="c-website" name="website" tabindex="-1" autocomplete="off"></div>
+    <button class="btn btn-gold btn-lg" type="submit">Send message <svg class="icon"><use href="#i-arrow-right"/></svg></button>
+  </form>
+</div>
+<%- include('../partials/footer') %>

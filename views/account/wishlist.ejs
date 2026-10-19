@@ -1,0 +1,23 @@
+<%- include('../partials/header') %>
+<section class="page-hero" style="padding-bottom: 32px">
+  <div class="container"><h1>My account</h1><p>Your orders, favourites and details in one place.</p></div>
+</section>
+<div class="container account-layout">
+  <%- include('_nav') %>
+  <div>
+    <h2 style="font-size:1.9rem">Wishlist</h2>
+    <% if (!products.length) { %>
+      <div class="empty card">
+        <svg class="icon"><use href="#i-heart"/></svg>
+        <h3>Nothing saved yet</h3>
+        <p>Tap the heart on any artwork to keep it here while you decide.</p>
+        <a class="btn btn-gold" href="/shop">Find something you love</a>
+      </div>
+    <% } else { %>
+      <div class="product-grid cols-3">
+        <% products.forEach(p => { %><%- include('../partials/product-card', { p }) %><% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

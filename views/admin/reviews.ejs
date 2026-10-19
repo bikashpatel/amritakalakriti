@@ -1,0 +1,77 @@
+<%- include('partials/top') %>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead">
+      <% if (stats.n) { %>
+        <%= stats.n %> review<%= stats.n === 1 ? '' : 's' %> · average <strong><%= stats.avg %></strong> / 5<% if (stats.hidden) { %> · <%= stats.hidden %> hidden<% } %>
+      <% } else { %>
+        Reviews customers leave on artworks appear here. Hide any that should not be shown.
+      <% } %>
+    </p>
+  </div>
+</div>
+
+<form class="filters" method="get" action="/admin/reviews" role="search">
+  <label class="filter-search">
+    <span class="sr-only">Search reviews</span>
+    <svg class="icon"><use href="#i-search"/></svg>
+    <input type="search" name="q" value="<%= f.q %>" placeholder="Artwork, customer or words">
+  </label>
+  <label>
+    <span class="sr-only">Visibility</span>
+    <select name="visible" data-autosubmit>
+      <option value="">All reviews</option>
+      <option value="1"<%= f.visible === '1' ? ' selected' : '' %>>Visible</option>
+      <option value="0"<%= f.visible === '0' ? ' selected' : '' %>>Hidden</option>
+    </select>
+  </label>
+  <button class="btn btn-dark btn-sm" type="submit">Filter</button>
+  <% if (filtered) { %><a class="btn btn-ghost btn-sm" href="/admin/reviews">Clear</a><% } %>
+</form>
+
+<section class="card">
+  <% if (!reviews.length) { %>
+    <%- include('partials/empty', { emptyText: filtered ? 'No reviews match these filters.' : 'No reviews yet — they will gather here as collectors share their thoughts.' }) %>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Artwork</th><th>Customer</th><th>Rating</th><th class="w-wide">Comment</th><th>Date</th><th class="center">Visible</th><th class="actions-col"><span class="sr-only">Delete</span></th></tr>
+        </thead>
+        <tbody>
+          <% reviews.forEach((r) => { %>
+            <tr class="<%= r.is_approved ? '' : 'is-muted' %>">
+              <td>
+                <div class="row-media">
+                  <% if (r.product_image) { %><img class="thumb" src="<%= r.product_image %>" alt="" width="48" height="48" loading="lazy"><% } else { %><span class="thumb thumb-empty"><svg class="icon"><use href="#i-image"/></svg></span><% } %>
+                  <a class="row-title" href="/art/<%= r.product_slug %>#reviews" target="_blank" rel="noopener"><%= r.product_title %></a>
+                </div>
+              </td>
+              <td><a href="/admin/customers/<%= r.user_id %>"><%= r.user_name %></a><span class="sub"><%= r.user_email %></span></td>
+              <td><span class="stars" aria-label="<%= r.rating %> out of 5"><% for (let i = 1; i <= 5; i++) { %><svg class="icon<%= i > r.rating ? ' off' : '' %>"><use href="#i-star"/></svg><% } %></span></td>
+              <td class="comment-cell"><% if (r.comment) { %><p class="clamp-3 prewrap"><%= r.comment %></p><% } else { %><span class="muted">—</span><% } %></td>
+              <td class="nowrap"><%= h.formatDate(r.created_at) %></td>
+              <td class="center">
+                <form method="post" action="/admin/reviews/<%= r.id %>/toggle" class="inline-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="switch<%= r.is_approved ? ' is-on' : '' %>" role="switch" aria-checked="<%= r.is_approved ? 'true' : 'false' %>"
+                          title="<%= r.is_approved ? 'Visible — click to hide' : 'Hidden — click to show' %>"><span class="sr-only">Visible on store</span></button>
+                </form>
+              </td>
+              <td class="actions-col">
+                <form method="post" action="/admin/reviews/<%= r.id %>/delete" class="inline-form" data-confirm="Delete this review by <%= r.user_name %>? This cannot be undone.">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="btn btn-ghost btn-sm btn-icon btn-icon-danger" type="submit" title="Delete" aria-label="Delete review"><svg class="icon"><use href="#i-trash"/></svg></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+<%- include('partials/pagination') %>
+
+<%- include('partials/bottom') %>

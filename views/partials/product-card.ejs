@@ -1,0 +1,37 @@
+<% const soldOut = p.stock <= 0; const onSale = p.compare_at_price && p.compare_at_price > p.price; const saved = wishlistIds.has(p.id); %>
+<article class="product-card<%= soldOut ? ' is-sold' : '' %>">
+  <a class="pc-media" href="/art/<%= p.slug %>" tabindex="-1" aria-hidden="true">
+    <span class="pc-frame"><img src="<%= p.image || '/images/emblem-md.png' %>" alt="" loading="lazy" decoding="async"></span>
+    <span class="pc-badges">
+      <% if (soldOut) { %><span class="badge badge-dark">Sold</span>
+      <% } else if (onSale) { %><span class="badge badge-rose">Save <%= Math.round((1 - p.price / p.compare_at_price) * 100) %>%</span>
+      <% } else if (p.stock === 1) { %><span class="badge badge-gold">One of a kind</span><% } %>
+    </span>
+  </a>
+  <form class="pc-wish" action="/account/wishlist/toggle" method="post" data-wishlist-form>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="product_id" value="<%= p.id %>">
+    <button type="submit" class="wish-btn<%= saved ? ' is-saved' : '' %>" aria-pressed="<%= saved %>" aria-label="<%= saved ? 'Remove from wishlist' : 'Save to wishlist' %>">
+      <svg class="icon"><use href="#i-heart"/></svg>
+    </button>
+  </form>
+  <div class="pc-body">
+    <% if (p.category_name) { %><p class="pc-cat"><%= p.category_name %></p><% } %>
+    <h3 class="pc-title"><a href="/art/<%= p.slug %>"><%= p.title %></a></h3>
+    <p class="pc-meta"><%= [p.medium, p.dimensions].filter(Boolean).join(' · ') %></p>
+    <div class="pc-foot">
+      <span class="price"><%= formatINR(p.price) %><% if (onSale) { %><span class="price-was"><%= formatINR(p.compare_at_price) %></span><% } %></span>
+      <% if (!soldOut) { %>
+      <form action="/cart/add" method="post" data-add-to-cart>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="product_id" value="<%= p.id %>">
+        <button class="pc-add" type="submit" aria-label="Add <%= p.title %> to cart">
+          <svg class="icon"><use href="#i-bag"/></svg><span>Add</span>
+        </button>
+      </form>
+      <% } else { %>
+        <span class="pc-sold-note">Sold</span>
+      <% } %>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,59 @@
+<%- include('partials/top') %>
+<% const fe = (k) => (errors[k] ? ' has-error' : ''); %>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead page-head-meta"><span class="mono"><%= publicUrl %></span><span class="muted small"> · last saved <%= h.formatDate(page.updated_at, true) %></span></p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-outline btn-sm" href="<%= publicUrl %>" target="_blank" rel="noopener"><svg class="icon"><use href="#i-eye"/></svg>Preview on store</a>
+  </div>
+</div>
+
+<% if (Object.keys(errors).length) { %>
+  <div class="alert alert-error"><svg class="icon"><use href="#i-alert"/></svg><div>Please check the highlighted fields.</div></div>
+<% } %>
+
+<form class="form-layout" method="post" action="/admin/pages/<%= encodeURIComponent(page.slug) %>" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="form-main">
+    <section class="card card-pad form-card">
+      <div class="field<%= fe('title') %>">
+        <label for="pg-title">Title</label>
+        <input id="pg-title" type="text" name="title" value="<%= form.title %>" maxlength="150" required>
+        <%- include('partials/err', { msg: errors.title }) %>
+      </div>
+      <div class="field">
+        <label for="pg-body">Content</label>
+        <textarea id="pg-body" class="textarea-editor" name="body" rows="24" spellcheck="true"><%= form.body %></textarea>
+      </div>
+    </section>
+  </div>
+
+  <aside class="form-aside">
+    <section class="card card-pad form-card format-help">
+      <h2 class="form-card-title">Formatting</h2>
+      <p class="small">Write in plain text. A few simple marks add structure:</p>
+      <dl class="format-list">
+        <div><dt><code>## Heading</code></dt><dd>A section heading</dd></div>
+        <div><dt><code>### Smaller heading</code></dt><dd>A sub-heading</dd></div>
+        <div><dt><code>- list item</code></dt><dd>A bullet point (one per line)</dd></div>
+        <div><dt>Blank line</dt><dd>Starts a new paragraph</dd></div>
+      </dl>
+      <p class="hint">Headings and lists must be separated from paragraphs by a blank line.</p>
+      <a class="btn btn-ghost btn-sm" href="<%= publicUrl %>" target="_blank" rel="noopener"><svg class="icon"><use href="#i-external"/></svg>Open <%= publicUrl %></a>
+    </section>
+
+    <details class="card card-pad form-card saved-preview">
+      <summary>Saved version preview</summary>
+      <div class="prose"><%- h.renderText(page.body) %></div>
+    </details>
+  </aside>
+
+  <div class="save-bar">
+    <a class="btn btn-ghost btn-sm" href="/admin/pages">Cancel</a>
+    <button class="btn btn-gold" type="submit"><svg class="icon"><use href="#i-check"/></svg>Save page</button>
+  </div>
+</form>
+
+<%- include('partials/bottom') %>

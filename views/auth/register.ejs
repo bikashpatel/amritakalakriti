@@ -1,0 +1,40 @@
+<%- include('../partials/header') %>
+<div class="auth-wrap">
+  <div class="auth-art" aria-hidden="true">
+    <img src="/images/art/lotus-morning-mist.svg" alt="">
+    <div class="auth-quote">
+      <p>Every creation tells a story — begin yours.</p>
+      <span>Join the <%= settings.store_name %> circle</span>
+    </div>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-card">
+      <p class="eyebrow"><svg class="icon"><use href="#i-lotus"/></svg> Welcome</p>
+      <h1>Create your account</h1>
+      <p class="lead">Save artworks you love, check out in seconds and follow every order.</p>
+      <% if (typeof errors !== 'undefined' && errors.length) { %>
+        <div class="alert alert-error"><svg class="icon"><use href="#i-alert"/></svg><ul class="error-list"><% errors.forEach(e => { %><li><%= e %></li><% }) %></ul></div>
+      <% } %>
+      <form action="/register" method="post">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field"><label for="name">Full name</label><input id="name" name="name" value="<%= form.name || '' %>" autocomplete="name" required autofocus></div>
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" value="<%= form.email || '' %>" autocomplete="email" required></div>
+        <div class="field"><label for="phone">Mobile <span class="muted">(optional)</span></label><input id="phone" name="phone" type="tel" value="<%= form.phone || '' %>" autocomplete="tel" inputmode="tel" placeholder="For delivery updates"></div>
+        <div class="form-row">
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="password-field">
+              <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+              <button class="password-toggle" type="button" data-password-toggle aria-label="Show password"><svg class="icon"><use href="#i-eye"/></svg></button>
+            </div>
+            <span class="hint">At least 8 characters</span>
+          </div>
+          <div class="field"><label for="password_confirm">Confirm</label><input id="password_confirm" name="password_confirm" type="password" autocomplete="new-password" minlength="8" required></div>
+        </div>
+        <button class="btn btn-gold btn-lg btn-block" type="submit">Create account</button>
+      </form>
+      <p class="auth-switch">Already have an account? <a class="link" href="/login">Sign in</a></p>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

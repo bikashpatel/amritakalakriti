@@ -1,0 +1,43 @@
+<%- include('../partials/header') %>
+<section class="page-hero" style="padding-bottom: 32px">
+  <div class="container"><h1>My account</h1><p>Your orders, favourites and details in one place.</p></div>
+</section>
+<div class="container account-layout">
+  <%- include('_nav') %>
+  <div style="display:grid;gap:18px">
+    <% if (typeof errors !== 'undefined' && errors.length) { %>
+      <div class="alert alert-error"><svg class="icon"><use href="#i-alert"/></svg><ul class="error-list"><% errors.forEach(e => { %><li><%= e %></li><% }) %></ul></div>
+    <% } %>
+    <form class="card form-section" action="/account/profile" method="post" style="margin:0">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h2>Profile &amp; saved address</h2>
+      <div class="form-row">
+        <div class="field"><label for="name">Full name</label><input id="name" name="name" value="<%= form.name %>" required></div>
+        <div class="field"><label for="phone">Mobile</label><input id="phone" name="phone" type="tel" value="<%= form.phone || '' %>"></div>
+      </div>
+      <div class="field"><label>Email</label><input value="<%= user.email %>" disabled><span class="hint">To change your email, please contact us.</span></div>
+      <div class="field"><label for="address_line1">House / flat, street</label><input id="address_line1" name="address_line1" value="<%= form.address_line1 || '' %>"></div>
+      <div class="field"><label for="address_line2">Area, landmark</label><input id="address_line2" name="address_line2" value="<%= form.address_line2 || '' %>"></div>
+      <div class="form-row-3">
+        <div class="field"><label for="city">City</label><input id="city" name="city" value="<%= form.city || '' %>"></div>
+        <div class="field"><label for="state">State</label>
+          <select id="state" name="state"><option value="">Choose…</option><% states.forEach(s => { %><option <%= form.state === s ? 'selected' : '' %>><%= s %></option><% }) %></select>
+        </div>
+        <div class="field"><label for="pincode">PIN code</label><input id="pincode" name="pincode" value="<%= form.pincode || '' %>" inputmode="numeric" maxlength="6"></div>
+      </div>
+      <button class="btn btn-dark" type="submit">Save changes</button>
+    </form>
+
+    <form class="card form-section" id="password" action="/account/password" method="post" style="margin:0">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h2>Change password</h2>
+      <div class="field"><label for="current_password">Current password</label><input id="current_password" name="current_password" type="password" autocomplete="current-password" required></div>
+      <div class="form-row">
+        <div class="field"><label for="new_password">New password</label><input id="new_password" name="new_password" type="password" minlength="8" autocomplete="new-password" required></div>
+        <div class="field"><label for="new_password_confirm">Confirm new password</label><input id="new_password_confirm" name="new_password_confirm" type="password" minlength="8" autocomplete="new-password" required></div>
+      </div>
+      <button class="btn btn-outline" type="submit">Update password</button>
+    </form>
+  </div>
+</div>
+<%- include('../partials/footer') %>

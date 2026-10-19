@@ -1,0 +1,203 @@
+<%- include('partials/top') %>
+<%
+  const isEdit = Boolean(product);
+  const action = isEdit ? `/admin/products/${product.id}` : '/admin/products';
+  const hasErrors = Object.keys(errors).length > 0;
+  const fe = (k) => (errors[k] ? ' has-error' : '');
+%>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <% if (isEdit) { %>
+      <p class="page-head-lead page-head-meta">
+        <span class="badge <%= product.is_active ? 'badge-sage' : '' %>"><%= product.is_active ? 'Live' : 'Hidden' %></span>
+        <% if (product.stock === 0) { %><span class="badge badge-rose">Sold out</span><% } %>
+        <% if (product.is_featured) { %><span class="badge badge-gold">Featured</span><% } %>
+        <span class="muted small">Added <%= h.formatDate(product.created_at) %> · updated <%= h.formatDate(product.updated_at, true) %> · <%= product.views %> view<%= product.views === 1 ? '' : 's' %> · <%= soldCount %> sold</span>
+      </p>
+    <% } else { %>
+      <p class="page-head-lead page-head-meta">Add a new piece to the gallery. You can save it hidden and put it live later.</p>
+    <% } %>
+  </div>
+  <% if (isEdit) { %>
+    <div class="page-head-actions">
+      <a class="btn btn-outline btn-sm" href="/art/<%= product.slug %>" target="_blank" rel="noopener"><svg class="icon"><use href="#i-eye"/></svg>View on store</a>
+    </div>
+  <% } %>
+</div>
+
+<% if (hasErrors) { %>
+  <div class="alert alert-error"><svg class="icon"><use href="#i-alert"/></svg><div>Please check the highlighted fields.<% if (errors._images) { %> <%= errors._images %><% } %></div></div>
+<% } %>
+
+<form id="product-form" class="form-layout" method="post" action="<%= action %>" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="form-main">
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Details</h2>
+      <div class="field<%= fe('title') %>">
+        <label for="f-title">Title</label>
+        <input id="f-title" type="text" name="title" value="<%= form.title %>" maxlength="200" required autocomplete="off" data-slug-source>
+        <%- include('partials/err', { msg: errors.title }) %>
+      </div>
+      <div class="field">
+        <label for="f-slug">Web address</label>
+        <div class="input-prefix"><span>/art/</span><input id="f-slug" type="text" name="slug" value="<%= form.slug %>" maxlength="100" autocomplete="off" placeholder="<%= isEdit ? product.slug : 'created from the title' %>"<% if (!isEdit) { %> data-slug-target<% } %>></div>
+        <p class="hint"><%= isEdit ? 'Changing this changes the artwork’s link — old links will stop working.' : 'Leave blank to create it from the title.' %></p>
+      </div>
+      <div class="field">
+        <label for="f-short">Short description</label>
+        <input id="f-short" type="text" name="short_description" value="<%= form.short_description %>" maxlength="300">
+        <p class="hint">One line shown on cards and at the top of the artwork page.</p>
+      </div>
+      <div class="field">
+        <label for="f-desc">Description</label>
+        <textarea id="f-desc" name="description" rows="8"><%= form.description %></textarea>
+        <p class="hint">Leave a blank line between paragraphs.</p>
+      </div>
+      <div class="form-row-3">
+        <div class="field">
+          <label for="f-artist">Artist</label>
+          <input id="f-artist" type="text" name="artist" value="<%= form.artist %>" maxlength="120">
+        </div>
+        <div class="field">
+          <label for="f-medium">Medium</label>
+          <input id="f-medium" type="text" name="medium" value="<%= form.medium %>" maxlength="160" placeholder="Acrylic on canvas">
+        </div>
+        <div class="field">
+          <label for="f-dim">Dimensions</label>
+          <input id="f-dim" type="text" name="dimensions" value="<%= form.dimensions %>" maxlength="80" placeholder="24 × 18 in">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="f-year">Year</label>
+          <input id="f-year" type="text" name="year" value="<%= form.year %>" maxlength="20" inputmode="numeric">
+        </div>
+        <div class="field<%= fe('sku') %>">
+          <label for="f-sku">SKU</label>
+          <input id="f-sku" type="text" name="sku" value="<%= form.sku %>" maxlength="60" placeholder="AK-021" autocomplete="off">
+          <%- include('partials/err', { msg: errors.sku }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Price &amp; stock</h2>
+      <div class="form-row-3">
+        <div class="field<%= fe('price') %>">
+          <label for="f-price">Price (₹)</label>
+          <input id="f-price" type="text" name="price" value="<%= form.price %>" inputmode="numeric" required placeholder="4500">
+          <%- include('partials/err', { msg: errors.price }) %>
+        </div>
+        <div class="field<%= fe('compare_at_price') %>">
+          <label for="f-compare">Compare-at price (₹)</label>
+          <input id="f-compare" type="text" name="compare_at_price" value="<%= form.compare_at_price %>" inputmode="numeric" placeholder="Optional">
+          <%- include('partials/err', { msg: errors.compare_at_price }) %>
+          <p class="hint">Shown struck through as the old price.</p>
+        </div>
+        <div class="field<%= fe('stock') %>">
+          <label for="f-stock">In stock</label>
+          <input id="f-stock" type="number" name="stock" value="<%= form.stock %>" min="0" step="1" required>
+          <%- include('partials/err', { msg: errors.stock }) %>
+          <p class="hint">Originals are usually 1. At 0 it shows as sold out.</p>
+        </div>
+      </div>
+      <p class="hint">Whole rupees only — no paise.</p>
+    </section>
+  </div>
+
+  <aside class="form-aside">
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Visibility</h2>
+      <label class="check check-block">
+        <input type="checkbox" name="is_active" value="1"<%= Number(form.is_active) ? ' checked' : '' %>>
+        <span><strong>Live on the store</strong><span class="hint">Untick to hide it while you prepare it.</span></span>
+      </label>
+      <label class="check check-block">
+        <input type="checkbox" name="is_featured" value="1"<%= Number(form.is_featured) ? ' checked' : '' %>>
+        <span><strong>Feature on the homepage</strong><span class="hint">Shown in the featured collection.</span></span>
+      </label>
+      <div class="field<%= fe('category_id') %>">
+        <label for="f-cat">Art form</label>
+        <select id="f-cat" name="category_id">
+          <option value="">Uncategorised</option>
+          <% categories.forEach((c) => { %><option value="<%= c.id %>"<%= String(c.id) === String(form.category_id ?? '') ? ' selected' : '' %>><%= c.name %></option><% }) %>
+        </select>
+        <%- include('partials/err', { msg: errors.category_id }) %>
+      </div>
+    </section>
+
+    <section class="card card-pad form-card" id="images">
+      <h2 class="form-card-title">Images</h2>
+      <% if (isEdit && (product.image || images.length)) { %>
+        <div class="img-grid">
+          <% if (product.image) { %>
+            <figure class="img-tile is-main">
+              <img src="<%= product.image %>" alt="Main image" loading="lazy">
+              <figcaption>
+                <span class="badge badge-gold">Main</span>
+                <button type="submit" form="image-action" formaction="/admin/products/<%= product.id %>/images/delete" name="image" value="main"
+                        class="btn btn-ghost btn-sm btn-icon btn-icon-danger" title="Delete image" aria-label="Delete main image"
+                        data-confirm="Delete the main image?<%= images.length ? ' The next image will become the main one.' : '' %>">
+                  <svg class="icon"><use href="#i-trash"/></svg>
+                </button>
+              </figcaption>
+            </figure>
+          <% } %>
+          <% images.forEach((img) => { %>
+            <figure class="img-tile">
+              <img src="<%= img.path %>" alt="" loading="lazy">
+              <figcaption>
+                <button type="submit" form="image-action" formaction="/admin/products/<%= product.id %>/images/main" name="image" value="<%= img.id %>"
+                        class="btn btn-ghost btn-sm img-main-btn" title="Use as the main image">Set as main</button>
+                <button type="submit" form="image-action" formaction="/admin/products/<%= product.id %>/images/delete" name="image" value="<%= img.id %>"
+                        class="btn btn-ghost btn-sm btn-icon btn-icon-danger" title="Delete image" aria-label="Delete image" data-confirm="Delete this image?">
+                  <svg class="icon"><use href="#i-trash"/></svg>
+                </button>
+              </figcaption>
+            </figure>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="muted small img-none"><svg class="icon"><use href="#i-image"/></svg>No images yet.</p>
+      <% } %>
+      <label class="dropzone">
+        <input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple data-file-preview="#img-preview">
+        <svg class="icon"><use href="#i-upload"/></svg>
+        <span><strong>Choose images</strong> or drop them here</span>
+        <span class="hint">JPG, PNG, WebP, GIF or AVIF · up to 10 files, 8 MB each</span>
+      </label>
+      <div class="file-preview" id="img-preview" aria-live="polite"></div>
+      <p class="hint"><%= isEdit && product.image ? 'New images are added after the existing ones.' : 'The first image becomes the main image.' %></p>
+    </section>
+
+    <% if (isEdit) { %>
+      <section class="card card-pad form-card danger-zone">
+        <h2 class="form-card-title">Delete artwork</h2>
+        <p class="small muted">Removes it from the store for good. Past orders keep their own record of the title and price.</p>
+        <button type="submit" form="delete-form" class="btn btn-danger btn-sm"
+                data-confirm="Delete “<%= product.title %>”? This cannot be undone. Past orders keep their record of it.">
+          <svg class="icon"><use href="#i-trash"/></svg>Delete artwork
+        </button>
+      </section>
+    <% } %>
+  </aside>
+
+  <div class="save-bar">
+    <a class="btn btn-ghost btn-sm" href="/admin/products">Cancel</a>
+    <button class="btn btn-gold" type="submit"><svg class="icon"><use href="#i-check"/></svg><%= isEdit ? 'Save changes' : 'Add artwork' %></button>
+  </div>
+</form>
+
+<% if (isEdit) { %>
+  <form id="image-action" method="post" action="/admin/products/<%= product.id %>/images/main" hidden>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  </form>
+  <form id="delete-form" method="post" action="/admin/products/<%= product.id %>/delete" hidden>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  </form>
+<% } %>
+
+<%- include('partials/bottom') %>

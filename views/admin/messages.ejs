@@ -1,0 +1,71 @@
+<%- include('partials/top') %>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead"><%= all %> message<%= all === 1 ? '' : 's' %> from the contact form<% if (adminCounts.unread) { %> · <strong><%= adminCounts.unread %> unread</strong><% } %></p>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Filter messages">
+  <a class="tab<%= !f.show ? ' is-active' : '' %>" href="/admin/messages<%= f.q ? `?q=${encodeURIComponent(f.q)}` : '' %>"<% if (!f.show) { %> aria-current="page"<% } %>>All<span class="tab-n"><%= all %></span></a>
+  <a class="tab<%= f.show ? ' is-active' : '' %>" href="/admin/messages?show=unread<%= f.q ? `&q=${encodeURIComponent(f.q)}` : '' %>"<% if (f.show) { %> aria-current="page"<% } %>>Unread<span class="tab-n"><%= adminCounts.unread %></span></a>
+</nav>
+
+<form class="filters" method="get" action="/admin/messages" role="search">
+  <% if (f.show) { %><input type="hidden" name="show" value="unread"><% } %>
+  <label class="filter-search">
+    <span class="sr-only">Search messages</span>
+    <svg class="icon"><use href="#i-search"/></svg>
+    <input type="search" name="q" value="<%= f.q %>" placeholder="Name, email, subject or words">
+  </label>
+  <button class="btn btn-dark btn-sm" type="submit">Search</button>
+  <% if (filtered) { %><a class="btn btn-ghost btn-sm" href="/admin/messages<%= f.show ? '?show=unread' : '' %>">Clear</a><% } %>
+</form>
+
+<section class="card">
+  <% if (!messages.length) { %>
+    <%- include('partials/empty', { emptyText: f.show ? 'Inbox zero — every message has been read.' : filtered ? 'No messages match that search.' : 'No messages yet. Notes sent from the contact page land here.' }) %>
+  <% } else { %>
+    <ul class="inbox">
+      <% messages.forEach((m) => {
+        const subject = m.subject || 'Message from the website';
+        const reply = `mailto:${encodeURIComponent(m.email).replace(/%40/g, '@')}?subject=${encodeURIComponent('Re: ' + subject)}`;
+      %>
+        <li>
+          <details class="msg<%= m.is_read ? '' : ' is-unread' %>" data-message="<%= m.id %>"<% if (!m.is_read) { %> data-unread<% } %><% if (open === m.id) { %> open<% } %>>
+            <summary>
+              <span class="msg-dot" aria-hidden="true"></span>
+              <span class="msg-from"><%= m.name %><span class="sub"><%= m.email %></span></span>
+              <span class="msg-subject"><strong><%= subject %></strong><span class="msg-snippet"><%= m.message.slice(0, 140) %></span></span>
+              <span class="msg-date"><%= h.formatDate(m.created_at, true) %></span>
+              <% if (!m.is_read) { %><span class="sr-only">Unread</span><% } %>
+            </summary>
+            <div class="msg-body">
+              <dl class="kv kv-inline">
+                <div><dt>From</dt><dd><%= m.name %> · <a href="mailto:<%= m.email %>"><%= m.email %></a></dd></div>
+                <% if (m.phone) { %><div><dt>Phone</dt><dd><a href="tel:<%= m.phone.replace(/[^\d+]/g, '') %>"><%= m.phone %></a></dd></div><% } %>
+                <div><dt>Received</dt><dd><%= h.formatDate(m.created_at, true) %></dd></div>
+              </dl>
+              <div class="msg-text prewrap"><%= m.message %></div>
+              <div class="msg-actions">
+                <a class="btn btn-gold btn-sm" href="<%= reply %>"><svg class="icon"><use href="#i-mail"/></svg>Reply by email</a>
+                <form method="post" action="/admin/messages/<%= m.id %>/read" class="inline-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="read" value="<%= m.is_read ? '0' : '1' %>">
+                  <button class="btn btn-outline btn-sm" type="submit" data-read-toggle><%= m.is_read ? 'Mark as unread' : 'Mark as read' %></button>
+                </form>
+                <form method="post" action="/admin/messages/<%= m.id %>/delete" class="inline-form" data-confirm="Delete this message from <%= m.name %>? This cannot be undone.">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="btn btn-ghost btn-sm btn-icon-danger" type="submit"><svg class="icon"><use href="#i-trash"/></svg>Delete</button>
+                </form>
+              </div>
+            </div>
+          </details>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+<%- include('partials/pagination') %>
+
+<%- include('partials/bottom') %>

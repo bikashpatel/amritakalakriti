@@ -1,0 +1,79 @@
+<%- include('partials/top') %>
+<%
+  const tabs = [
+    { key: '', label: 'All', n: counts.all },
+    { key: 'open', label: 'To fulfil', n: counts.open },
+    ...ORDER_STATUSES.map((s) => ({ key: s, label: ORDER_STATUS_LABELS[s], n: counts[s] || 0 })),
+  ];
+%>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead"><%= counts.all %> order<%= counts.all === 1 ? '' : 's' %> in total<% if (counts.open) { %> · <strong><%= counts.open %></strong> waiting to be packed or shipped<% } %></p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-outline btn-sm" href="<%= exportUrl %>"><svg class="icon"><use href="#i-download"/></svg>Export CSV</a>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="Filter by status">
+  <% tabs.forEach((t) => { %>
+    <a class="tab<%= f.status === t.key ? ' is-active' : '' %>" href="<%= tabUrl(t.key) %>"<% if (f.status === t.key) { %> aria-current="page"<% } %>>
+      <%= t.label %><span class="tab-n"><%= t.n %></span>
+    </a>
+  <% }) %>
+</nav>
+
+<form class="filters" method="get" action="/admin/orders" role="search">
+  <% if (f.status) { %><input type="hidden" name="status" value="<%= f.status %>"><% } %>
+  <label class="filter-search">
+    <span class="sr-only">Search orders</span>
+    <svg class="icon"><use href="#i-search"/></svg>
+    <input type="search" name="q" value="<%= f.q %>" placeholder="Order no., name, email or phone">
+  </label>
+  <label>
+    <span class="sr-only">Payment</span>
+    <select name="payment" data-autosubmit>
+      <option value="">Any payment</option>
+      <% PAYMENT_STATUSES.forEach((p) => { %><option value="<%= p %>"<%= f.payment === p ? ' selected' : '' %>><%= p.charAt(0).toUpperCase() + p.slice(1) %></option><% }) %>
+    </select>
+  </label>
+  <label class="filter-date"><span>From</span><input type="date" name="from" value="<%= f.from %>"></label>
+  <label class="filter-date"><span>To</span><input type="date" name="to" value="<%= f.to %>"></label>
+  <button class="btn btn-dark btn-sm" type="submit">Filter</button>
+  <% if (filtered) { %><a class="btn btn-ghost btn-sm" href="/admin/orders<%= f.status ? `?status=${f.status}` : '' %>">Clear</a><% } %>
+</form>
+
+<section class="card">
+  <% if (!orders.length) { %>
+    <% if (filtered || f.status) { %>
+      <%- include('partials/empty', { emptyText: 'No orders match these filters.', emptyAction: { href: '/admin/orders', label: 'Show all orders' } }) %>
+    <% } else { %>
+      <%- include('partials/empty', { emptyText: 'No orders yet. They will appear here as soon as someone checks out.' }) %>
+    <% } %>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Order</th><th>Placed</th><th>Customer</th><th class="num">Total</th><th>Payment</th><th>Status</th><th class="actions-col"><span class="sr-only">Open</span></th></tr>
+        </thead>
+        <tbody>
+          <% orders.forEach((o) => { %>
+            <tr>
+              <td><a class="row-title mono" href="/admin/orders/<%= o.id %>"><%= o.order_number %></a><span class="sub"><%= o.item_count %> item<%= o.item_count === 1 ? '' : 's' %></span></td>
+              <td class="nowrap"><%= h.formatDate(o.created_at, true) %></td>
+              <td><%= o.ship_name %><span class="sub"><%= o.ship_email %></span></td>
+              <td class="num"><%= formatINR(o.total) %></td>
+              <td><span class="badge pay-<%= o.payment_status %>"><%= o.payment_status %></span><span class="sub"><%= PAYMENT_METHOD_LABELS[o.payment_method] %></span></td>
+              <td><span class="badge status-<%= o.status %>"><%= ORDER_STATUS_LABELS[o.status] %></span><% if (o.tracking_number) { %><span class="sub mono"><%= o.tracking_number %></span><% } %></td>
+              <td class="actions-col"><a class="btn btn-ghost btn-sm" href="/admin/orders/<%= o.id %>">Open<svg class="icon"><use href="#i-chevron-right"/></svg></a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+<%- include('partials/pagination') %>
+
+<%- include('partials/bottom') %>

@@ -1,0 +1,198 @@
+<%- include('partials/top') %>
+<%
+  const o = order;
+  const itemCount = items.reduce((s, i) => s + i.quantity, 0);
+  const isOnline = o.payment_method !== 'cod';
+%>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead page-head-meta">
+      <span class="badge status-<%= o.status %>"><%= ORDER_STATUS_LABELS[o.status] %></span>
+      <span class="badge pay-<%= o.payment_status %>"><%= o.payment_status %></span>
+      <span class="muted small">Placed <%= h.formatDate(o.created_at, true) %> · <%= itemCount %> item<%= itemCount === 1 ? '' : 's' %> · <%= formatINR(o.total) %></span>
+    </p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-outline btn-sm" href="/admin/orders/<%= o.id %>/invoice?type=slip" target="_blank" rel="noopener"><svg class="icon"><use href="#i-package"/></svg>Packing slip</a>
+    <a class="btn btn-dark btn-sm" href="/admin/orders/<%= o.id %>/invoice" target="_blank" rel="noopener"><svg class="icon"><use href="#i-file"/></svg>Invoice</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="detail-main">
+    <section class="card">
+      <div class="card-head"><h2>Items</h2></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Artwork</th><th class="num">Price</th><th class="num">Qty</th><th class="num">Total</th></tr></thead>
+          <tbody>
+            <% items.forEach((it) => { const img = it.image || it.product_image; %>
+              <tr>
+                <td>
+                  <div class="row-media">
+                    <% if (img) { %><img class="thumb" src="<%= img %>" alt="" width="48" height="48" loading="lazy"><% } else { %><span class="thumb thumb-empty"><svg class="icon"><use href="#i-image"/></svg></span><% } %>
+                    <span>
+                      <% if (it.product_id) { %><a class="row-title" href="/admin/products/<%= it.product_id %>/edit"><%= it.title %></a><% } else { %><span class="row-title"><%= it.title %></span><% } %>
+                      <span class="sub"><%= it.product_id ? (it.product_sku || 'No SKU') : 'Artwork since deleted' %></span>
+                    </span>
+                  </div>
+                </td>
+                <td class="num"><%= formatINR(it.price) %></td>
+                <td class="num"><%= it.quantity %></td>
+                <td class="num"><%= formatINR(it.price * it.quantity) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <dl class="totals">
+        <div><dt>Subtotal</dt><dd><%= formatINR(o.subtotal) %></dd></div>
+        <div><dt>Shipping</dt><dd><%= o.shipping ? formatINR(o.shipping) : 'Free' %></dd></div>
+        <div class="totals-grand"><dt>Total</dt><dd><%= formatINR(o.total) %></dd></div>
+      </dl>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Customer &amp; delivery</h2></div>
+      <div class="card-pad info-cols">
+        <div>
+          <p class="label">Ship to</p>
+          <address class="address">
+            <strong><%= o.ship_name %></strong><br>
+            <%= o.ship_line1 %><br>
+            <% if (o.ship_line2) { %><%= o.ship_line2 %><br><% } %>
+            <%= o.ship_city %>, <%= o.ship_state %> <%= o.ship_pincode %><br>
+            India
+          </address>
+          <p class="contact-line"><svg class="icon"><use href="#i-phone"/></svg><a href="tel:<%= o.ship_phone.replace(/[^\d+]/g, '') %>"><%= o.ship_phone %></a></p>
+          <p class="contact-line"><svg class="icon"><use href="#i-mail"/></svg><a href="mailto:<%= o.ship_email %>"><%= o.ship_email %></a></p>
+        </div>
+        <div>
+          <p class="label">Account</p>
+          <% if (customer) { %>
+            <p><a class="row-title" href="/admin/customers/<%= customer.id %>"><%= customer.name %></a><span class="sub"><%= customer.email %></span></p>
+            <p class="small muted">Customer since <%= h.formatDate(customer.created_at) %> · <%= customer.order_count %> order<%= customer.order_count === 1 ? '' : 's' %></p>
+          <% } else { %>
+            <p class="muted small">The customer account has been deleted.</p>
+          <% } %>
+          <% if (o.courier || o.tracking_number) { %>
+            <p class="label">Shipment</p>
+            <p class="small"><%= o.courier || 'Courier not set' %><% if (o.tracking_number) { %><br><span class="mono"><%= o.tracking_number %></span><% } %></p>
+          <% } %>
+        </div>
+      </div>
+      <% if (o.customer_note) { %>
+        <div class="card-pad customer-note">
+          <p class="label"><svg class="icon"><use href="#i-message"/></svg>Note from the customer</p>
+          <blockquote class="prewrap"><%= o.customer_note %></blockquote>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Timeline</h2></div>
+      <% if (!history.length) { %>
+        <%- include('partials/empty', { emptyText: 'No history recorded for this order.' }) %>
+      <% } else { %>
+        <ol class="timeline">
+          <% history.forEach((ev, i) => { %>
+            <li class="<%= i === 0 ? 'is-latest' : '' %>">
+              <span class="timeline-dot status-<%= ev.status %>" aria-hidden="true"></span>
+              <div>
+                <p class="timeline-title"><%= ORDER_STATUS_LABELS[ev.status] || ev.status %></p>
+                <% if (ev.note) { %><p class="timeline-note"><%= ev.note %></p><% } %>
+                <p class="timeline-time"><%= h.formatDate(ev.created_at, true) %></p>
+              </div>
+            </li>
+          <% }) %>
+        </ol>
+      <% } %>
+    </section>
+  </div>
+
+  <aside class="detail-aside">
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Order status</h2>
+      <% if (o.status === 'cancelled') { %>
+        <p class="small muted">This order is cancelled and its stock was returned. Cancelled orders cannot be reopened — you can still add a note to the timeline.</p>
+      <% } %>
+      <form method="post" action="/admin/orders/<%= o.id %>/status">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field">
+          <label for="o-status">Status</label>
+          <select id="o-status" name="status" data-reveal="#ship-fields" data-reveal-value="shipped">
+            <% ORDER_STATUSES.forEach((s) => { %>
+              <option value="<%= s %>"<%= s === o.status ? ' selected' : '' %><%= o.status === 'cancelled' && s !== 'cancelled' ? ' disabled' : '' %>><%= ORDER_STATUS_LABELS[s] %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div id="ship-fields" class="reveal">
+          <div class="field">
+            <label for="o-courier">Courier</label>
+            <input id="o-courier" type="text" name="courier" value="<%= o.courier || '' %>" maxlength="80" placeholder="India Post, Delhivery, Blue Dart…" list="couriers">
+            <datalist id="couriers"><option value="India Post"><option value="Delhivery"><option value="Blue Dart"><option value="DTDC"><option value="Ekart"><option value="Xpressbees"></datalist>
+          </div>
+          <div class="field">
+            <label for="o-tracking">Tracking number</label>
+            <input id="o-tracking" type="text" name="tracking_number" value="<%= o.tracking_number || '' %>" maxlength="80" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <label for="o-note">Note for the timeline <span class="optional">optional</span></label>
+          <input id="o-note" type="text" name="note" maxlength="500" placeholder="e.g. Packed with extra padding">
+        </div>
+        <button class="btn btn-dark btn-sm btn-block" type="submit"
+                data-confirm-if="#o-status=cancelled" data-confirm="Cancel this order? Its items go back into stock and it cannot be reopened.">
+          Update status
+        </button>
+      </form>
+    </section>
+
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Payment</h2>
+      <dl class="kv">
+        <div><dt>Method</dt><dd><svg class="icon"><use href="#<%= isOnline ? 'i-card' : 'i-cash' %>"/></svg><%= PAYMENT_METHOD_LABELS[o.payment_method] %></dd></div>
+        <div><dt>Status</dt><dd><span class="badge pay-<%= o.payment_status %>"><%= o.payment_status %></span></dd></div>
+        <% if (o.razorpay_order_id) { %><div><dt>Razorpay order</dt><dd class="mono break"><%= o.razorpay_order_id %></dd></div><% } %>
+        <% if (o.razorpay_payment_id) { %><div><dt>Payment ID</dt><dd class="mono break"><%= o.razorpay_payment_id %></dd></div><% } %>
+      </dl>
+      <form method="post" action="/admin/orders/<%= o.id %>/payment" class="pay-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field">
+          <label for="p-note">Note <span class="optional">optional</span></label>
+          <input id="p-note" type="text" name="note" maxlength="300" placeholder="<%= o.payment_method === 'cod' ? 'e.g. Cash collected by courier' : 'e.g. Refund ID rfnd_…' %>">
+        </div>
+        <div class="btn-stack">
+          <% if (o.payment_status !== 'paid' && o.status !== 'cancelled') { %>
+            <button class="btn btn-dark btn-sm" type="submit" name="payment_status" value="paid"
+                    data-confirm="Mark <%= formatINR(o.total) %> as received for this order?"><svg class="icon"><use href="#i-check"/></svg>Mark as paid</button>
+          <% } %>
+          <% if (o.payment_status === 'paid') { %>
+            <button class="btn btn-outline btn-sm" type="submit" name="payment_status" value="refunded"
+                    data-confirm="Record this payment as refunded? Issue the refund itself from your Razorpay dashboard (or in cash)."><svg class="icon"><use href="#i-return"/></svg>Mark as refunded</button>
+          <% } %>
+          <% if (o.payment_status === 'unpaid') { %>
+            <button class="btn btn-ghost btn-sm" type="submit" name="payment_status" value="failed"
+                    data-confirm="Mark this payment as failed?">Mark as failed</button>
+          <% } %>
+        </div>
+        <p class="hint">This records the payment state only — refunds are issued from your Razorpay dashboard.</p>
+      </form>
+    </section>
+
+    <section class="card card-pad form-card" id="note">
+      <h2 class="form-card-title">Private note</h2>
+      <form method="post" action="/admin/orders/<%= o.id %>/note">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field">
+          <label for="o-admin-note" class="sr-only">Private note</label>
+          <textarea id="o-admin-note" name="admin_note" rows="4" maxlength="2000" placeholder="Only visible to admins"><%= o.admin_note || '' %></textarea>
+        </div>
+        <button class="btn btn-outline btn-sm" type="submit">Save note</button>
+      </form>
+    </section>
+  </aside>
+</div>
+
+<%- include('partials/bottom') %>

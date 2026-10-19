@@ -1,0 +1,114 @@
+<%- include('partials/top') %>
+<%
+  const isEdit = Boolean(category);
+  const action = isEdit ? `/admin/categories/${category.id}` : '/admin/categories';
+  const hasErrors = Object.keys(errors).length > 0;
+  const fe = (k) => (errors[k] ? ' has-error' : '');
+%>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead page-head-meta">
+      <% if (isEdit) { %>
+        <span class="badge <%= category.is_active ? 'badge-sage' : '' %>"><%= category.is_active ? 'Shown' : 'Hidden' %></span>
+        <span class="muted small"><a class="link" href="/admin/products?category=<%= category.id %>"><%= productCount %> artwork<%= productCount === 1 ? '' : 's' %></a> in this art form</span>
+      <% } else { %>
+        A new art form for the shop menu, e.g. “Kalamkari” or “Tanjore Painting”.
+      <% } %>
+    </p>
+  </div>
+  <% if (isEdit) { %>
+    <div class="page-head-actions">
+      <a class="btn btn-outline btn-sm" href="/shop/<%= category.slug %>" target="_blank" rel="noopener"><svg class="icon"><use href="#i-eye"/></svg>View on store</a>
+    </div>
+  <% } %>
+</div>
+
+<% if (hasErrors) { %>
+  <div class="alert alert-error"><svg class="icon"><use href="#i-alert"/></svg><div>Please check the highlighted fields.<% if (errors._image) { %> <%= errors._image %><% } %></div></div>
+<% } %>
+
+<form class="form-layout" method="post" action="<%= action %>" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="form-main">
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Details</h2>
+      <div class="field<%= fe('name') %>">
+        <label for="c-name">Name</label>
+        <input id="c-name" type="text" name="name" value="<%= form.name %>" maxlength="100" required data-slug-source>
+        <%- include('partials/err', { msg: errors.name }) %>
+      </div>
+      <div class="field">
+        <label for="c-slug">Web address</label>
+        <div class="input-prefix"><span>/shop/</span><input id="c-slug" type="text" name="slug" value="<%= form.slug %>" maxlength="100" autocomplete="off" placeholder="<%= isEdit ? category.slug : 'created from the name' %>"<% if (!isEdit) { %> data-slug-target<% } %>></div>
+        <p class="hint"><%= isEdit ? 'Changing this changes the art form’s link.' : 'Leave blank to create it from the name.' %></p>
+      </div>
+      <div class="field">
+        <label for="c-tagline">Tagline</label>
+        <input id="c-tagline" type="text" name="tagline" value="<%= form.tagline %>" maxlength="160" placeholder="Patta painting from Odisha">
+      </div>
+      <div class="field">
+        <label for="c-desc">Description</label>
+        <textarea id="c-desc" name="description" rows="5"><%= form.description %></textarea>
+        <p class="hint">Shown at the top of the art form’s page in the shop.</p>
+      </div>
+    </section>
+  </div>
+
+  <aside class="form-aside">
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Display</h2>
+      <label class="check check-block">
+        <input type="checkbox" name="is_active" value="1"<%= Number(form.is_active) ? ' checked' : '' %>>
+        <span><strong>Show in the store</strong><span class="hint">Hidden art forms disappear from the menu.</span></span>
+      </label>
+      <div class="field<%= fe('sort_order') %>">
+        <label for="c-sort">Sort order</label>
+        <input id="c-sort" type="number" name="sort_order" value="<%= form.sort_order %>" min="0" max="9999" step="1">
+        <%- include('partials/err', { msg: errors.sort_order }) %>
+        <p class="hint">Lower numbers come first.</p>
+      </div>
+    </section>
+
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Cover image</h2>
+      <% if (isEdit && category.image) { %>
+        <figure class="img-tile is-main img-tile-wide">
+          <img src="<%= category.image %>" alt="Current cover image" loading="lazy">
+        </figure>
+        <label class="check"><input type="checkbox" name="remove_image" value="1"> Remove this image</label>
+      <% } %>
+      <label class="dropzone">
+        <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" data-file-preview="#cat-preview">
+        <svg class="icon"><use href="#i-upload"/></svg>
+        <span><strong><%= isEdit && category.image ? 'Replace image' : 'Choose an image' %></strong></span>
+        <span class="hint">JPG, PNG, WebP, GIF or AVIF · up to 8 MB</span>
+      </label>
+      <div class="file-preview" id="cat-preview" aria-live="polite"></div>
+    </section>
+
+    <% if (isEdit) { %>
+      <section class="card card-pad form-card danger-zone">
+        <h2 class="form-card-title">Delete art form</h2>
+        <p class="small muted">Its artworks stay in the store but become uncategorised.</p>
+        <button type="submit" form="delete-form" class="btn btn-danger btn-sm"
+                data-confirm="Delete the art form “<%= category.name %>”?<%= productCount ? ` Its ${productCount} artwork${productCount === 1 ? '' : 's'} will stay in the store but become uncategorised.` : '' %>">
+          <svg class="icon"><use href="#i-trash"/></svg>Delete art form
+        </button>
+      </section>
+    <% } %>
+  </aside>
+
+  <div class="save-bar">
+    <a class="btn btn-ghost btn-sm" href="/admin/categories">Cancel</a>
+    <button class="btn btn-gold" type="submit"><svg class="icon"><use href="#i-check"/></svg><%= isEdit ? 'Save changes' : 'Add art form' %></button>
+  </div>
+</form>
+
+<% if (isEdit) { %>
+  <form id="delete-form" method="post" action="/admin/categories/<%= category.id %>/delete" hidden>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  </form>
+<% } %>
+
+<%- include('partials/bottom') %>

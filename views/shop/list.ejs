@@ -1,0 +1,107 @@
+<%- include('../partials/header') %>
+
+<section class="page-hero">
+  <div class="container">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">✦</span>
+      <% if (category) { %><a href="/shop">Shop</a><span aria-hidden="true">✦</span><span><%= category.name %></span>
+      <% } else { %><span>Shop</span><% } %>
+    </nav>
+    <% if (category) { %>
+      <h1><%= category.name %></h1>
+      <% if (category.tagline) { %><p class="script" style="font-size:1.35rem;margin-bottom:.6rem"><%= category.tagline %></p><% } %>
+      <% if (category.description) { %><p><%= category.description %></p><% } %>
+    <% } else if (q) { %>
+      <h1>Results for “<%= q %>”</h1>
+      <p><%= total %> <%= total === 1 ? 'artwork matches' : 'artworks match' %> your search.</p>
+    <% } else { %>
+      <h1>The collection</h1>
+      <p>Original paintings and handcrafted pieces from across India’s art traditions — every one made by hand.</p>
+    <% } %>
+  </div>
+</section>
+
+<div class="container shop-layout">
+  <aside class="filters" id="filters" data-filters>
+    <div class="filter-group">
+      <h3>Art forms</h3>
+      <ul class="filter-list">
+        <li><a href="/shop<%= q ? '?q=' + encodeURIComponent(q) : '' %>" class="<%= !category ? 'is-active' : '' %>">All artworks</a></li>
+        <% navCategories.forEach(c => { %>
+          <li><a href="/shop/<%= c.slug %>" class="<%= category && category.id === c.id ? 'is-active' : '' %>"><span><%= c.name %></span><small><%= c.product_count %></small></a></li>
+        <% }) %>
+      </ul>
+    </div>
+    <div class="filter-group">
+      <h3>Price</h3>
+      <ul class="filter-list">
+        <li><a href="<%= urlWith({ price: undefined }) %>" class="<%= !band ? 'is-active' : '' %>">Any price</a></li>
+        <% PRICE_BANDS.forEach(b => { %>
+          <li><a href="<%= urlWith({ price: b.key }) %>" class="<%= band && band.key === b.key ? 'is-active' : '' %>"><%= b.label %></a></li>
+        <% }) %>
+      </ul>
+    </div>
+    <div class="filter-group">
+      <h3>Availability</h3>
+      <ul class="filter-list">
+        <li><a href="<%= urlWith({ available: undefined }) %>" class="<%= !inStock ? 'is-active' : '' %>">Show all</a></li>
+        <li><a href="<%= urlWith({ available: '1' }) %>" class="<%= inStock ? 'is-active' : '' %>">Available now</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <div>
+    <div class="shop-toolbar">
+      <button class="btn btn-outline btn-sm filters-toggle" type="button" data-filters-toggle aria-controls="filters" aria-expanded="false">
+        <svg class="icon"><use href="#i-filter"/></svg> Filters
+      </button>
+      <p><strong><%= total %></strong> <%= total === 1 ? 'artwork' : 'artworks' %><%= pages > 1 ? ` · page ${page} of ${pages}` : '' %></p>
+      <form class="sort-form" method="get" action="<%= category ? '/shop/' + category.slug : '/shop' %>" data-autosubmit>
+        <% if (q) { %><input type="hidden" name="q" value="<%= q %>"><% } %>
+        <% if (band) { %><input type="hidden" name="price" value="<%= band.key %>"><% } %>
+        <% if (inStock) { %><input type="hidden" name="available" value="1"><% } %>
+        <label for="sort">Sort by</label>
+        <select id="sort" name="sort">
+          <% Object.entries(SORTS).forEach(([k, s]) => { %><option value="<%= k %>" <%= sortKey === k ? 'selected' : '' %>><%= s.label %></option><% }) %>
+        </select>
+        <noscript><button class="btn btn-sm btn-outline" type="submit">Apply</button></noscript>
+      </form>
+    </div>
+
+    <% if (q || band || inStock) { %>
+      <div class="chips">
+        <% if (q) { %><a class="chip" href="<%= urlWith({ q: undefined }) %>">“<%= q %>” <svg class="icon"><use href="#i-close"/></svg></a><% } %>
+        <% if (band) { %><a class="chip" href="<%= urlWith({ price: undefined }) %>"><%= band.label %> <svg class="icon"><use href="#i-close"/></svg></a><% } %>
+        <% if (inStock) { %><a class="chip" href="<%= urlWith({ available: undefined }) %>">Available now <svg class="icon"><use href="#i-close"/></svg></a><% } %>
+      </div>
+    <% } %>
+
+    <% if (products.length) { %>
+      <div class="product-grid cols-3">
+        <% products.forEach(p => { %><%- include('../partials/product-card', { p }) %><% }) %>
+      </div>
+      <% if (pages > 1) { %>
+        <nav class="pagination" aria-label="Pages">
+          <% if (page > 1) { %><a href="<%= urlWith({ page: page - 1 }) %>" aria-label="Previous page"><svg class="icon"><use href="#i-chevron-left"/></svg></a><% } %>
+          <% for (let i = 1; i <= pages; i++) { %>
+            <% if (i === page) { %><span class="is-current" aria-current="page"><%= i %></span>
+            <% } else { %><a href="<%= urlWith({ page: i }) %>"><%= i %></a><% } %>
+          <% } %>
+          <% if (page < pages) { %><a href="<%= urlWith({ page: page + 1 }) %>" aria-label="Next page"><svg class="icon"><use href="#i-chevron-right"/></svg></a><% } %>
+        </nav>
+      <% } %>
+    <% } else { %>
+      <div class="empty card">
+        <svg class="icon"><use href="#i-lotus"/></svg>
+        <h2>Nothing here just yet</h2>
+        <p>No artworks match these filters. Try removing a filter, or ask us about a custom commission in this style.</p>
+        <div class="btn-row center-row">
+          <a class="btn btn-gold" href="/shop">See all artworks</a>
+          <a class="btn btn-outline" href="/contact?subject=Custom%20commission">Ask about a commission</a>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

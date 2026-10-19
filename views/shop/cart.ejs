@@ -1,0 +1,93 @@
+<%- include('../partials/header') %>
+
+<section class="page-hero">
+  <div class="container">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">✦</span><span>Cart</span></nav>
+    <h1>Your cart</h1>
+    <% if (cart.count) { %><p><%= cart.count %> <%= cart.count === 1 ? 'piece' : 'pieces' %> waiting to come home with you.</p><% } %>
+  </div>
+</section>
+
+<div class="container">
+<% if (!cart.lines.length) { %>
+  <div class="empty card" style="margin-bottom: 64px">
+    <svg class="icon"><use href="#i-bag"/></svg>
+    <h2>Your cart is empty</h2>
+    <p>Wander through the collection — there is a story on every wall waiting to be told.</p>
+    <a class="btn btn-gold" href="/shop">Explore artworks</a>
+  </div>
+<% } else { %>
+  <div class="cart-layout">
+    <div class="cart-lines">
+      <% cart.lines.forEach(({ product: p, quantity, lineTotal }) => { %>
+        <article class="card cart-line">
+          <a class="cart-thumb" href="/art/<%= p.slug %>"><img src="<%= p.image %>" alt=""></a>
+          <div>
+            <p class="pc-cat"><%= p.category_name %></p>
+            <h3><a href="/art/<%= p.slug %>"><%= p.title %></a></h3>
+            <p class="muted"><%= [p.medium, p.dimensions].filter(Boolean).join(' · ') %></p>
+            <div class="cart-line-actions">
+              <% if (p.stock > 1) { %>
+                <form action="/cart/update" method="post" data-qty-form>
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="product_id" value="<%= p.id %>">
+                  <div class="qty qty-sm" data-qty>
+                    <button type="button" data-qty-step="-1" aria-label="Decrease quantity"><svg class="icon"><use href="#i-minus"/></svg></button>
+                    <input type="number" name="qty" value="<%= quantity %>" min="1" max="<%= Math.min(10, p.stock) %>" aria-label="Quantity" data-autosubmit-input>
+                    <button type="button" data-qty-step="1" aria-label="Increase quantity"><svg class="icon"><use href="#i-plus"/></svg></button>
+                  </div>
+                  <noscript><button class="btn btn-sm btn-outline" type="submit">Update</button></noscript>
+                </form>
+              <% } else { %>
+                <span class="badge badge-gold">One of a kind</span>
+              <% } %>
+              <form action="/cart/remove" method="post">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="product_id" value="<%= p.id %>">
+                <button class="link-button small" type="submit"><svg class="icon" style="width:15px;height:15px;display:inline;vertical-align:-2px"><use href="#i-trash"/></svg> Remove</button>
+              </form>
+            </div>
+          </div>
+          <div class="cart-line-total">
+            <span class="price"><%= formatINR(lineTotal) %></span>
+            <% if (quantity > 1) { %><div class="muted small"><%= formatINR(p.price) %> each</div><% } %>
+          </div>
+        </article>
+      <% }) %>
+      <a class="btn btn-ghost" href="/shop" style="justify-self:start"><svg class="icon"><use href="#i-arrow-left"/></svg> Continue shopping</a>
+    </div>
+
+    <aside class="card summary">
+      <h2>Order summary</h2>
+      <div class="summary-row"><span>Subtotal</span><span><%= formatINR(cart.subtotal) %></span></div>
+      <div class="summary-row"><span>Shipping</span><span><%= cart.shipping ? formatINR(cart.shipping) : 'Free' %></span></div>
+      <% if (cart.freeShippingGap) { %>
+        <div class="free-ship">
+          Add <strong><%= formatINR(cart.freeShippingGap) %></strong> more for free shipping.
+          <div class="free-ship-bar"><span style="width: <%= Math.min(100, Math.round(cart.subtotal / Number(settings.free_shipping_min) * 100)) %>%"></span></div>
+        </div>
+      <% } %>
+      <div class="summary-row total"><span>Total</span><span class="price"><%= formatINR(cart.total) %></span></div>
+      <a class="btn btn-gold btn-lg btn-block" href="/checkout">Proceed to checkout <svg class="icon"><use href="#i-arrow-right"/></svg></a>
+      <% if (!user) { %><p class="summary-note">You will be asked to sign in or create an account.</p><% } %>
+      <p class="summary-note"><svg class="icon"><use href="#i-lock"/></svg> Secure checkout · UPI, cards, net banking<%= settings.cod_enabled === '1' ? ', COD' : '' %></p>
+    </aside>
+  </div>
+<% } %>
+</div>
+
+<% if (suggestions.length) { %>
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head">
+      <div class="lotus-rule"><svg class="icon"><use href="#i-lotus"/></svg></div>
+      <h2><%= cart.lines.length ? 'Pairs beautifully with' : 'Collector favourites' %></h2>
+    </div>
+    <div class="product-grid">
+      <% suggestions.forEach(p => { %><%- include('../partials/product-card', { p }) %><% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<%- include('../partials/footer') %>

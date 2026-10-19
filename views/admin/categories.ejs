@@ -1,0 +1,59 @@
+<%- include('partials/top') %>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead">The art forms that organise the shop — shown in the store menu in this order.<% if (uncategorised) { %> <a class="link" href="/admin/products?category=none"><%= uncategorised %> artwork<%= uncategorised === 1 ? ' is' : 's are' %> uncategorised</a>.<% } %></p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-gold btn-sm" href="/admin/categories/new"><svg class="icon"><use href="#i-plus"/></svg>Add art form</a>
+  </div>
+</div>
+
+<section class="card">
+  <% if (!categories.length) { %>
+    <%- include('partials/empty', { emptyText: 'No art forms yet — add one to start organising the gallery.', emptyAction: { href: '/admin/categories/new', label: 'Add art form' } }) %>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th class="num">Order</th><th>Art form</th><th>Tagline</th><th class="num">Artworks</th><th>Status</th><th class="actions-col"><span class="sr-only">Actions</span></th></tr>
+        </thead>
+        <tbody>
+          <% categories.forEach((c) => { %>
+            <tr class="<%= c.is_active ? '' : 'is-muted' %>">
+              <td class="num muted"><%= c.sort_order %></td>
+              <td>
+                <div class="row-media">
+                  <% if (c.image) { %><img class="thumb" src="<%= c.image %>" alt="" width="48" height="48" loading="lazy"><% } else { %><span class="thumb thumb-empty"><svg class="icon"><use href="#i-tag"/></svg></span><% } %>
+                  <span>
+                    <a class="row-title" href="/admin/categories/<%= c.id %>/edit"><%= c.name %></a>
+                    <span class="sub mono">/shop/<%= c.slug %></span>
+                  </span>
+                </div>
+              </td>
+              <td class="muted"><%= c.tagline || '—' %></td>
+              <td class="num">
+                <a class="link-quiet" href="/admin/products?category=<%= c.id %>"><%= c.product_count %></a>
+                <% if (c.product_count !== c.live_count) { %><span class="sub"><%= c.live_count %> live</span><% } %>
+              </td>
+              <td><span class="badge <%= c.is_active ? 'badge-sage' : '' %>"><%= c.is_active ? 'Shown' : 'Hidden' %></span></td>
+              <td class="actions-col">
+                <div class="row-actions">
+                  <a class="btn btn-ghost btn-sm btn-icon" href="/admin/categories/<%= c.id %>/edit" title="Edit" aria-label="Edit <%= c.name %>"><svg class="icon"><use href="#i-edit"/></svg></a>
+                  <a class="btn btn-ghost btn-sm btn-icon" href="/shop/<%= c.slug %>" target="_blank" rel="noopener" title="View on store" aria-label="View <%= c.name %> on the store"><svg class="icon"><use href="#i-eye"/></svg></a>
+                  <form method="post" action="/admin/categories/<%= c.id %>/delete" class="inline-form"
+                        data-confirm="Delete the art form “<%= c.name %>”?<%= c.product_count ? ` Its ${c.product_count} artwork${c.product_count === 1 ? '' : 's'} will stay in the store but become uncategorised.` : '' %>">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-ghost btn-sm btn-icon btn-icon-danger" type="submit" title="Delete" aria-label="Delete <%= c.name %>"><svg class="icon"><use href="#i-trash"/></svg></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/bottom') %>

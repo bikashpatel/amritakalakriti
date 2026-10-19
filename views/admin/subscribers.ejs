@@ -1,0 +1,49 @@
+<%- include('partials/top') %>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead"><%= all %> newsletter subscriber<%= all === 1 ? '' : 's' %> — export them for your email tool.</p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-outline btn-sm<%= all ? '' : ' is-disabled' %>" href="<%= exportUrl %>"><svg class="icon"><use href="#i-download"/></svg>Export CSV</a>
+  </div>
+</div>
+
+<form class="filters" method="get" action="/admin/subscribers" role="search">
+  <label class="filter-search">
+    <span class="sr-only">Search subscribers</span>
+    <svg class="icon"><use href="#i-search"/></svg>
+    <input type="search" name="q" value="<%= f.q %>" placeholder="Search email">
+  </label>
+  <button class="btn btn-dark btn-sm" type="submit">Search</button>
+  <% if (filtered) { %><a class="btn btn-ghost btn-sm" href="/admin/subscribers">Clear</a><% } %>
+</form>
+
+<section class="card">
+  <% if (!subscribers.length) { %>
+    <%- include('partials/empty', { emptyText: filtered ? 'No subscribers match that search.' : 'No subscribers yet. Sign-ups from the newsletter form appear here.' }) %>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Email</th><th>Subscribed</th><th class="actions-col"><span class="sr-only">Remove</span></th></tr></thead>
+        <tbody>
+          <% subscribers.forEach((s) => { %>
+            <tr>
+              <td><a href="mailto:<%= s.email %>"><%= s.email %></a></td>
+              <td class="nowrap"><%= h.formatDate(s.created_at, true) %></td>
+              <td class="actions-col">
+                <form method="post" action="/admin/subscribers/<%= s.id %>/delete" class="inline-form" data-confirm="Remove <%= s.email %> from the newsletter list?">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="btn btn-ghost btn-sm btn-icon btn-icon-danger" type="submit" title="Remove" aria-label="Remove <%= s.email %>"><svg class="icon"><use href="#i-trash"/></svg></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+<%- include('partials/pagination') %>
+
+<%- include('partials/bottom') %>

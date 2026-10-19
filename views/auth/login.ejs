@@ -1,0 +1,35 @@
+<%- include('../partials/header') %>
+<div class="auth-wrap">
+  <div class="auth-art" aria-hidden="true">
+    <img src="/images/art/konark-sun.svg" alt="">
+    <div class="auth-quote">
+      <p>“Art is the window through which the soul looks at the world.”</p>
+      <span>Welcome back to <%= settings.store_name %></span>
+    </div>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-card">
+      <p class="eyebrow"><svg class="icon"><use href="#i-lotus"/></svg> Namaste</p>
+      <h1>Sign in</h1>
+      <p class="lead">Track your orders, save favourites and check out faster.</p>
+      <% if (typeof errors !== 'undefined' && errors.length) { %>
+        <div class="alert alert-error"><svg class="icon"><use href="#i-alert"/></svg><span><%= errors.join(' ') %></span></div>
+      <% } %>
+      <form action="/login" method="post">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" value="<%= form.email || '' %>" autocomplete="email" required autofocus></div>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="password-field">
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+            <button class="password-toggle" type="button" data-password-toggle aria-label="Show password"><svg class="icon"><use href="#i-eye"/></svg></button>
+          </div>
+        </div>
+        <button class="btn btn-dark btn-lg btn-block" type="submit">Sign in</button>
+      </form>
+      <p class="auth-switch">New here? <a class="link" href="/register">Create an account</a></p>
+      <p class="auth-switch small" style="margin-top:8px">Forgot your password? <a class="link" href="/contact?subject=Password%20reset">Contact us</a> and we will help.</p>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

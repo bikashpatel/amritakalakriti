@@ -1,0 +1,139 @@
+<%- include('partials/top') %>
+<% const p = person; const hasAddress = p.address_line1 || p.city; %>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead page-head-meta">
+      <% if (p.role === 'admin') { %><span class="badge badge-dark">Admin</span><% } %>
+      <span class="badge <%= p.is_active ? 'badge-sage' : 'badge-rose' %>"><%= p.is_active ? 'Active' : 'Deactivated' %></span>
+      <span class="muted small">Joined <%= h.formatDate(p.created_at) %><% if (p.last_login_at) { %> · last signed in <%= h.formatDate(p.last_login_at, true) %><% } %><% if (isSelf) { %> · this is you<% } %></span>
+    </p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-outline btn-sm" href="mailto:<%= p.email %>"><svg class="icon"><use href="#i-mail"/></svg>Email</a>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="detail-main">
+    <section class="mini-kpis">
+      <div class="mini-kpi"><span class="kpi-label">Orders</span><span class="kpi-value"><%= p.order_count %></span></div>
+      <div class="mini-kpi"><span class="kpi-label">Total spent</span><span class="kpi-value"><%= formatINR(p.spent) %></span></div>
+      <div class="mini-kpi"><span class="kpi-label">Reviews</span><span class="kpi-value"><%= reviews.length %></span></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Orders</h2></div>
+      <% if (!orders.length) { %>
+        <%- include('partials/empty', { emptyText: 'No orders from this customer yet.' }) %>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Order</th><th>Placed</th><th class="num">Total</th><th>Payment</th><th>Status</th></tr></thead>
+            <tbody>
+              <% orders.forEach((o) => { %>
+                <tr>
+                  <td><a class="row-title mono" href="/admin/orders/<%= o.id %>"><%= o.order_number %></a><span class="sub"><%= o.item_count %> item<%= o.item_count === 1 ? '' : 's' %></span></td>
+                  <td class="nowrap"><%= h.formatDate(o.created_at, true) %></td>
+                  <td class="num"><%= formatINR(o.total) %></td>
+                  <td><span class="badge pay-<%= o.payment_status %>"><%= o.payment_status %></span></td>
+                  <td><span class="badge status-<%= o.status %>"><%= ORDER_STATUS_LABELS[o.status] %></span></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <% if (reviews.length) { %>
+      <section class="card">
+        <div class="card-head"><h2>Reviews</h2><a class="btn btn-ghost btn-sm" href="/admin/reviews?q=<%= encodeURIComponent(p.email) %>">Manage<svg class="icon"><use href="#i-arrow-right"/></svg></a></div>
+        <ul class="review-list">
+          <% reviews.forEach((r) => { %>
+            <li>
+              <span class="stars" aria-label="<%= r.rating %> out of 5"><% for (let i = 1; i <= 5; i++) { %><svg class="icon<%= i > r.rating ? ' off' : '' %>"><use href="#i-star"/></svg><% } %></span>
+              <a class="row-title" href="/admin/products/<%= r.product_id %>/edit"><%= r.product_title %></a>
+              <% if (!r.is_approved) { %><span class="badge">Hidden</span><% } %>
+              <% if (r.comment) { %><p class="small prewrap"><%= r.comment %></p><% } %>
+            </li>
+          <% }) %>
+        </ul>
+      </section>
+    <% } %>
+  </div>
+
+  <aside class="detail-aside">
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Profile</h2>
+      <dl class="kv">
+        <div><dt>Name</dt><dd><%= p.name %></dd></div>
+        <div><dt>Email</dt><dd class="break"><a href="mailto:<%= p.email %>"><%= p.email %></a></dd></div>
+        <div><dt>Phone</dt><dd><%= p.phone || '—' %></dd></div>
+      </dl>
+      <p class="label">Saved address</p>
+      <% if (hasAddress) { %>
+        <address class="address small">
+          <% if (p.address_line1) { %><%= p.address_line1 %><br><% } %>
+          <% if (p.address_line2) { %><%= p.address_line2 %><br><% } %>
+          <%= [p.city, p.state].filter(Boolean).join(', ') %> <%= p.pincode || '' %>
+        </address>
+      <% } else { %>
+        <p class="small muted">No address saved yet.</p>
+      <% } %>
+    </section>
+
+    <section class="card card-pad form-card">
+      <h2 class="form-card-title">Access</h2>
+      <% if (isSelf) { %>
+        <p class="small muted">This is your own account. Another administrator would need to change your access.</p>
+      <% } else { %>
+        <form method="post" action="/admin/customers/<%= p.id %>/active" class="access-row">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div>
+            <p class="access-title"><%= p.is_active ? 'Account is active' : 'Account is deactivated' %></p>
+            <p class="hint"><%= p.is_active ? 'They can sign in and place orders.' : 'They cannot sign in. Past orders are kept.' %></p>
+          </div>
+          <% if (p.is_active) { %>
+            <button class="btn btn-danger btn-sm" type="submit" data-confirm="Deactivate <%= p.name %>? They will be signed out and unable to sign in.">Deactivate</button>
+          <% } else { %>
+            <button class="btn btn-outline btn-sm" type="submit">Reactivate</button>
+          <% } %>
+        </form>
+        <form method="post" action="/admin/customers/<%= p.id %>/role" class="access-row">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div>
+            <p class="access-title"><%= p.role === 'admin' ? 'Administrator' : 'Customer' %></p>
+            <p class="hint"><%= p.role === 'admin' ? 'Has full access to this back office.' : 'No access to the back office.' %></p>
+          </div>
+          <% if (p.role === 'admin') { %>
+            <input type="hidden" name="role" value="customer">
+            <button class="btn btn-outline btn-sm" type="submit" data-confirm="Remove admin access from <%= p.name %>?">Make customer</button>
+          <% } else { %>
+            <input type="hidden" name="role" value="admin">
+            <button class="btn btn-outline btn-sm" type="submit" data-confirm="Give <%= p.name %> full admin access to the store, orders and customers?">Make admin</button>
+          <% } %>
+        </form>
+      <% } %>
+    </section>
+
+    <section class="card card-pad form-card" id="password">
+      <h2 class="form-card-title">Set a new password</h2>
+      <% if (isSelf) { %>
+        <p class="small muted">Change your own password from <a class="link" href="/admin/settings#password">Settings</a>.</p>
+      <% } else { %>
+        <form method="post" action="/admin/customers/<%= p.id %>/password">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="field">
+            <label for="c-pw">New password</label>
+            <input id="c-pw" type="password" name="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+            <p class="hint">At least 8 characters. Share it with them privately and ask them to change it.</p>
+          </div>
+          <button class="btn btn-outline btn-sm" type="submit"><svg class="icon"><use href="#i-lock"/></svg>Set password</button>
+        </form>
+      <% } %>
+    </section>
+  </aside>
+</div>
+
+<%- include('partials/bottom') %>

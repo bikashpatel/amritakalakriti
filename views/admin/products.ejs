@@ -1,0 +1,114 @@
+<%- include('partials/top') %>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead"><%= summary.total %> artwork<%= summary.total === 1 ? '' : 's' %> · <%= summary.live %> live · <%= summary.soldOut %> sold out</p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn-gold btn-sm" href="/admin/products/new"><svg class="icon"><use href="#i-plus"/></svg>Add artwork</a>
+  </div>
+</div>
+
+<form class="filters" method="get" action="/admin/products" role="search">
+  <label class="filter-search">
+    <span class="sr-only">Search artworks</span>
+    <svg class="icon"><use href="#i-search"/></svg>
+    <input type="search" name="q" value="<%= f.q %>" placeholder="Search title or SKU">
+  </label>
+  <label>
+    <span class="sr-only">Art form</span>
+    <select name="category" data-autosubmit>
+      <option value="">All art forms</option>
+      <% categories.forEach((c) => { %><option value="<%= c.id %>"<%= String(c.id) === f.category ? ' selected' : '' %>><%= c.name %></option><% }) %>
+      <option value="none"<%= f.category === 'none' ? ' selected' : '' %>>Uncategorised</option>
+    </select>
+  </label>
+  <label>
+    <span class="sr-only">Status</span>
+    <select name="status" data-autosubmit>
+      <option value="">Any status</option>
+      <option value="active"<%= f.status === 'active' ? ' selected' : '' %>>Live</option>
+      <option value="inactive"<%= f.status === 'inactive' ? ' selected' : '' %>>Hidden</option>
+      <option value="soldout"<%= f.status === 'soldout' ? ' selected' : '' %>>Sold out</option>
+      <option value="featured"<%= f.status === 'featured' ? ' selected' : '' %>>Featured</option>
+    </select>
+  </label>
+  <button class="btn btn-dark btn-sm" type="submit">Filter</button>
+  <% if (filtered) { %><a class="btn btn-ghost btn-sm" href="/admin/products">Clear</a><% } %>
+</form>
+
+<section class="card">
+  <% if (!products.length) { %>
+    <% if (filtered) { %>
+      <%- include('partials/empty', { emptyText: 'No artworks match these filters.', emptyAction: { href: '/admin/products', label: 'Clear filters' } }) %>
+    <% } else { %>
+      <%- include('partials/empty', { emptyText: 'No artworks yet — add your first piece to open the gallery.', emptyAction: { href: '/admin/products/new', label: 'Add artwork' } }) %>
+    <% } %>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Artwork</th><th>Art form</th><th class="num">Price</th><th class="num">Stock</th>
+            <th class="center">Featured</th><th class="center">Live</th><th class="actions-col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% products.forEach((p) => { %>
+            <tr class="<%= p.is_active ? '' : 'is-muted' %>">
+              <td>
+                <div class="row-media">
+                  <% if (p.image) { %><img class="thumb" src="<%= p.image %>" alt="" width="48" height="48" loading="lazy"><% } else { %><span class="thumb thumb-empty"><svg class="icon"><use href="#i-image"/></svg></span><% } %>
+                  <span>
+                    <a class="row-title" href="/admin/products/<%= p.id %>/edit"><%= p.title %></a>
+                    <span class="sub"><%= p.sku || 'No SKU' %><% if (p.medium) { %> · <%= p.medium %><% } %></span>
+                  </span>
+                </div>
+              </td>
+              <td><%= p.category_name || '—' %></td>
+              <td class="num nowrap">
+                <%= formatINR(p.price) %>
+                <% if (p.compare_at_price) { %><span class="sub strike"><%= formatINR(p.compare_at_price) %></span><% } %>
+              </td>
+              <td class="num"><% if (p.stock === 0) { %><span class="badge badge-rose">Sold out</span><% } else { %><%= p.stock %><% } %></td>
+              <td class="center">
+                <form method="post" action="/admin/products/<%= p.id %>/toggle" class="inline-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="field" value="is_featured">
+                  <button type="submit" class="star-toggle<%= p.is_featured ? ' is-on' : '' %>" aria-pressed="<%= p.is_featured ? 'true' : 'false' %>"
+                          title="<%= p.is_featured ? 'Featured on the homepage — click to unfeature' : 'Feature on the homepage' %>">
+                    <svg class="icon"><use href="#i-star"/></svg><span class="sr-only">Featured</span>
+                  </button>
+                </form>
+              </td>
+              <td class="center">
+                <form method="post" action="/admin/products/<%= p.id %>/toggle" class="inline-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="field" value="is_active">
+                  <button type="submit" class="switch<%= p.is_active ? ' is-on' : '' %>" role="switch" aria-checked="<%= p.is_active ? 'true' : 'false' %>"
+                          title="<%= p.is_active ? 'Live — click to hide from the store' : 'Hidden — click to put it live' %>">
+                    <span class="sr-only">Live on store</span>
+                  </button>
+                </form>
+              </td>
+              <td class="actions-col">
+                <div class="row-actions">
+                  <a class="btn btn-ghost btn-sm btn-icon" href="/admin/products/<%= p.id %>/edit" title="Edit" aria-label="Edit <%= p.title %>"><svg class="icon"><use href="#i-edit"/></svg></a>
+                  <a class="btn btn-ghost btn-sm btn-icon" href="/art/<%= p.slug %>" target="_blank" rel="noopener" title="View on store" aria-label="View <%= p.title %> on the store"><svg class="icon"><use href="#i-eye"/></svg></a>
+                  <form method="post" action="/admin/products/<%= p.id %>/delete" class="inline-form"
+                        data-confirm="Delete “<%= p.title %>”? This cannot be undone. Past orders keep their record of it.">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-ghost btn-sm btn-icon btn-icon-danger" type="submit" title="Delete" aria-label="Delete <%= p.title %>"><svg class="icon"><use href="#i-trash"/></svg></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+<%- include('partials/pagination') %>
+
+<%- include('partials/bottom') %>

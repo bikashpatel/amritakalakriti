@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title ? `${title} · ${settings.store_name}` : `${settings.store_name} — Handmade Indian Art · ${settings.store_tagline}` %></title>
+  <meta name="description" content="<%= metaDescription || 'Original handmade art from India — canvas paintings, watercolours, Pattachitra, Madhubani, Warli, Gond and mandala art. ' + settings.store_tagline %>">
+  <meta name="theme-color" content="#FBF6EC">
+  <meta property="og:site_name" content="<%= settings.store_name %>">
+  <meta property="og:title" content="<%= title || settings.store_name %>">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="<%= baseUrl + (typeof ogImage !== 'undefined' && ogImage ? ogImage : '/images/logo-full.jpg') %>">
+  <link rel="canonical" href="<%= baseUrl + currentPath %>">
+  <link rel="icon" href="/images/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jost:wght@300;400;500;600&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/store.css">
+  <script src="/js/main.js" defer></script>
+</head>
+<body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>">
+<%- include('icons') %>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<% if (settings.announcement) { %>
+<div class="announce">
+  <div class="container announce-inner">
+    <svg class="icon"><use href="#i-lotus"/></svg>
+    <span><%= settings.announcement %></span>
+    <svg class="icon"><use href="#i-lotus"/></svg>
+  </div>
+</div>
+<% } %>
+
+<header class="site-header" data-header>
+  <div class="container header-row">
+    <div class="header-left">
+      <button class="icon-btn nav-toggle" type="button" data-nav-open aria-label="Open menu" aria-controls="site-nav">
+        <svg class="icon"><use href="#i-menu"/></svg>
+      </button>
+      <form class="header-search" action="/shop" method="get" role="search">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <label class="sr-only" for="header-q">Search artworks</label>
+        <input id="header-q" type="search" name="q" placeholder="Search paintings, art forms…" value="<%= currentPath === '/shop' && query.q ? query.q : '' %>" autocomplete="off">
+      </form>
+    </div>
+
+    <a class="brand" href="/" aria-label="<%= settings.store_name %> — home">
+      <img class="brand-emblem" src="/images/emblem-sm.png" alt="" width="220" height="144">
+      <img class="brand-word" src="/images/wordmark-sm.png" alt="<%= settings.store_name %>" width="560" height="129">
+    </a>
+
+    <div class="header-actions">
+      <a class="icon-btn search-mobile" href="/shop" aria-label="Search"><svg class="icon"><use href="#i-search"/></svg></a>
+      <% if (user) { %>
+        <a class="icon-btn account-link" href="<%= user.role === 'admin' ? '/admin' : '/account' %>" title="<%= user.role === 'admin' ? 'Admin panel' : 'My account' %>">
+          <svg class="icon"><use href="#i-user"/></svg>
+          <span class="icon-btn-label"><%= user.role === 'admin' ? 'Admin' : user.name.split(' ')[0] %></span>
+        </a>
+      <% } else { %>
+        <a class="icon-btn account-link" href="/login" title="Sign in">
+          <svg class="icon"><use href="#i-user"/></svg>
+          <span class="icon-btn-label">Sign in</span>
+        </a>
+      <% } %>
+      <a class="icon-btn" href="/account/wishlist" aria-label="Wishlist" title="Wishlist">
+        <svg class="icon"><use href="#i-heart"/></svg>
+        <% if (wishlistIds.size) { %><span class="bubble bubble-soft"><%= wishlistIds.size %></span><% } %>
+      </a>
+      <a class="icon-btn cart-link" href="/cart" aria-label="Cart, <%= cartCount %> items" title="Cart">
+        <svg class="icon"><use href="#i-bag"/></svg>
+        <span class="bubble" data-cart-count <%= cartCount ? '' : 'hidden' %>><%= cartCount %></span>
+      </a>
+    </div>
+  </div>
+
+  <nav class="main-nav" id="site-nav" aria-label="Main" data-nav>
+    <div class="nav-drawer-head">
+      <img src="/images/emblem-sm.png" alt="" width="110" height="72">
+      <button class="icon-btn" type="button" data-nav-close aria-label="Close menu"><svg class="icon"><use href="#i-close"/></svg></button>
+    </div>
+    <ul class="nav-list">
+      <li><a href="/" class="<%= currentPath === '/' ? 'is-active' : '' %>">Home</a></li>
+      <li><a href="/shop" class="<%= currentPath === '/shop' ? 'is-active' : '' %>">Shop All</a></li>
+      <li class="has-mega">
+        <button type="button" class="nav-mega-toggle <%= currentPath.startsWith('/shop/') ? 'is-active' : '' %>" aria-expanded="false" data-mega-toggle>
+          Art Forms <svg class="icon"><use href="#i-chevron-down"/></svg>
+        </button>
+        <div class="mega" data-mega>
+          <div class="container mega-inner">
+            <div class="mega-grid">
+              <% navCategories.forEach(c => { %>
+                <a class="mega-item" href="/shop/<%= c.slug %>">
+                  <span class="mega-thumb"><% if (c.image) { %><img src="<%= c.image %>" alt="" loading="lazy"><% } %></span>
+                  <span><strong><%= c.name %></strong><small><%= c.product_count %> <%= c.product_count === 1 ? 'artwork' : 'artworks' %></small></span>
+                </a>
+              <% }) %>
+            </div>
+            <a class="mega-feature" href="/contact?subject=Custom%20commission">
+              <span class="eyebrow"><svg class="icon"><use href="#i-brush"/></svg> Commissions</span>
+              <strong>A painting made just for you</strong>
+              <span>Portraits, wedding gifts and wall-sized pieces in any style.</span>
+              <span class="link">Start a commission</span>
+            </a>
+          </div>
+        </div>
+      </li>
+      <li><a href="/shop?sort=newest" class="<%= currentPath === '/shop' && query.sort === 'newest' ? 'is-active' : '' %>">New Arrivals</a></li>
+      <li><a href="/about" class="<%= currentPath === '/about' ? 'is-active' : '' %>">Our Story</a></li>
+      <li><a href="/contact" class="<%= currentPath === '/contact' ? 'is-active' : '' %>">Contact</a></li>
+      <% if (user && user.role === 'admin') { %><li class="nav-admin"><a href="/admin">Admin Panel</a></li><% } %>
+    </ul>
+    <div class="nav-drawer-foot">
+      <% if (user) { %>
+        <a href="/account">My account</a>
+        <form action="/logout" method="post"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="link-button" type="submit">Sign out</button></form>
+      <% } else { %>
+        <a class="btn btn-dark btn-block" href="/login">Sign in</a>
+        <a class="btn btn-outline btn-block" href="/register">Create account</a>
+      <% } %>
+    </div>
+  </nav>
+  <div class="nav-scrim" data-nav-close></div>
+</header>
+
+<% if (flash && flash.length) { %>
+<div class="container flash-stack" role="status">
+  <% flash.forEach(f => { %>
+    <div class="alert alert-<%= f.type %>" data-dismissable>
+      <svg class="icon"><use href="#<%= f.type === 'success' ? 'i-check' : f.type === 'error' ? 'i-alert' : 'i-info' %>"/></svg>
+      <span><%= f.text %></span>
+    </div>
+  <% }) %>
+</div>
+<% } %>
+
+<main id="main">

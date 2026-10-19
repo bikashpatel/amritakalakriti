@@ -1,0 +1,66 @@
+<%- include('partials/top') %>
+
+<div class="page-head">
+  <div class="page-head-text">
+    <p class="page-head-lead"><%= pg.total %> <%= f.role === 'admin' ? 'administrator' : f.role === 'customer' ? 'customer' : 'account' %><%= pg.total === 1 ? '' : 's' %><%= filtered ? ' match' + (pg.total === 1 ? 'es' : '') + ' your search' : '' %></p>
+  </div>
+</div>
+
+<form class="filters" method="get" action="/admin/customers" role="search">
+  <label class="filter-search">
+    <span class="sr-only">Search customers</span>
+    <svg class="icon"><use href="#i-search"/></svg>
+    <input type="search" name="q" value="<%= f.q %>" placeholder="Name, email or phone">
+  </label>
+  <label>
+    <span class="sr-only">Role</span>
+    <select name="role" data-autosubmit>
+      <option value="">Everyone</option>
+      <option value="customer"<%= f.role === 'customer' ? ' selected' : '' %>>Customers</option>
+      <option value="admin"<%= f.role === 'admin' ? ' selected' : '' %>>Administrators</option>
+    </select>
+  </label>
+  <button class="btn btn-dark btn-sm" type="submit">Search</button>
+  <% if (filtered) { %><a class="btn btn-ghost btn-sm" href="/admin/customers">Clear</a><% } %>
+</form>
+
+<section class="card">
+  <% if (!customers.length) { %>
+    <%- include('partials/empty', { emptyText: filtered ? 'Nobody matches that search.' : 'No customers yet — they appear here when they create an account.' }) %>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Name</th><th>Phone</th><th class="num">Orders</th><th class="num">Spent</th><th>Joined</th><th>Status</th><th class="actions-col"><span class="sr-only">Open</span></th></tr>
+        </thead>
+        <tbody>
+          <% customers.forEach((c) => { %>
+            <tr class="<%= c.is_active ? '' : 'is-muted' %>">
+              <td>
+                <div class="row-media">
+                  <span class="avatar-sm" aria-hidden="true"><%= (c.name || '?').trim().charAt(0).toUpperCase() %></span>
+                  <span>
+                    <a class="row-title" href="/admin/customers/<%= c.id %>"><%= c.name %></a>
+                    <span class="sub"><%= c.email %></span>
+                  </span>
+                </div>
+              </td>
+              <td class="nowrap"><%= c.phone || '—' %></td>
+              <td class="num"><%= c.order_count %></td>
+              <td class="num"><%= formatINR(c.spent) %></td>
+              <td class="nowrap"><%= h.formatDate(c.created_at) %></td>
+              <td class="badge-cell">
+                <% if (c.role === 'admin') { %><span class="badge badge-dark">Admin</span><% } %>
+                <span class="badge <%= c.is_active ? 'badge-sage' : 'badge-rose' %>"><%= c.is_active ? 'Active' : 'Deactivated' %></span>
+              </td>
+              <td class="actions-col"><a class="btn btn-ghost btn-sm" href="/admin/customers/<%= c.id %>">Open<svg class="icon"><use href="#i-chevron-right"/></svg></a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+<%- include('partials/pagination') %>
+
+<%- include('partials/bottom') %>

@@ -1,0 +1,49 @@
+<%- include('../partials/header') %>
+<% const refundDue = order.status === 'cancelled' && order.payment_status === 'paid'; %>
+
+<section class="success-hero">
+  <div class="container container-narrow">
+    <div class="success-mark"><svg class="icon"><use href="#i-<%= refundDue ? 'info' : 'lotus' %>"/></svg></div>
+    <% if (refundDue) { %>
+      <h1>We received your payment, but…</h1>
+      <p class="lead muted">The artwork was reserved by someone else before your payment completed. We are sorry! A full refund of <%= formatINR(order.total) %> will be issued to your original payment method within 5–7 working days.</p>
+    <% } else { %>
+      <p class="eyebrow">धन्यवाद · Thank you</p>
+      <h1>Your art is on its way home</h1>
+      <p class="lead muted">Thank you, <%= order.ship_name.split(' ')[0] %>! We have received your order<%= order.payment_status === 'paid' ? ' and payment' : '' %> and will send updates to <strong><%= order.ship_email %></strong>.</p>
+    <% } %>
+    <span class="order-number"><svg class="icon" style="width:16px;height:16px"><use href="#i-tag"/></svg> Order <%= order.order_number %></span>
+  </div>
+</section>
+
+<div class="container container-narrow" style="padding-bottom: 72px">
+  <% if (!refundDue) { %>
+  <div class="next-steps">
+    <div><svg class="icon"><use href="#i-brush"/></svg><strong>Final touches</strong>We sign the piece and prepare its certificate.</div>
+    <div><svg class="icon"><use href="#i-package"/></svg><strong>Careful packing</strong>Wrapped, corner-guarded and boxed within 3–5 days.</div>
+    <div><svg class="icon"><use href="#i-truck"/></svg><strong>Shipped to you</strong>Tracking details will appear in My Orders.</div>
+  </div>
+  <% } %>
+
+  <div class="card card-pad">
+    <div class="mini-lines">
+      <% items.forEach(it => { %>
+        <div class="mini-line">
+          <span class="mini-thumb"><img src="<%= it.image %>" alt=""><% if (it.quantity > 1) { %><b><%= it.quantity %></b><% } %></span>
+          <span><strong><%= it.title %></strong></span>
+          <span><%= formatINR(it.price * it.quantity) %></span>
+        </div>
+      <% }) %>
+    </div>
+    <div class="summary-row"><span>Subtotal</span><span><%= formatINR(order.subtotal) %></span></div>
+    <div class="summary-row"><span>Shipping</span><span><%= order.shipping ? formatINR(order.shipping) : 'Free' %></span></div>
+    <div class="summary-row total"><span>Total <span class="muted small">· <%= h.PAYMENT_METHOD_LABELS[order.payment_method] %></span></span><span class="price"><%= formatINR(order.total) %></span></div>
+  </div>
+
+  <div class="btn-row center-row" style="margin-top: 28px">
+    <a class="btn btn-dark" href="/account/orders/<%= order.order_number %>">View order details</a>
+    <a class="btn btn-outline" href="/shop">Continue exploring</a>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
