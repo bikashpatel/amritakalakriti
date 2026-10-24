@@ -230,6 +230,9 @@ body {
 .footer-bottom { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-block: 22px; border-top: 1px solid rgba(226, 194, 133, .18); font-size: .82rem; color: #A99377; }
 .footer-bottom p { margin: 0; }
 .pay-methods { display: flex; align-items: center; gap: 8px; }
+.footer-credit { padding-bottom: 22px; text-align: center; font-size: .78rem; color: #A99377; }
+.footer-credit p { margin: 0; }
+.footer-credit a { color: #E2CFA9; letter-spacing: .04em; }
 .pay-methods .icon { width: 15px; height: 15px; color: var(--gold); }
 
 /* ---------- Page header (listing / content pages) ---------- */
