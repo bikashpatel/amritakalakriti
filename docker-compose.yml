@@ -1,0 +1,39 @@
+# AmritaKalakriti on any Docker host (a VM, a home server, …).
+#
+#   docker compose up -d --build                    # the store only, on http://127.0.0.1:3000
+#   docker compose --profile tunnel up -d --build   # + Cloudflare Tunnel → https://amritakalakriti.com
+#
+# Settings come from .env (copy .env.example). Data persists in the "store-data" volume.
+
+services:
+  app:
+    build: .
+    image: amritakalakriti:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATA_DIR: /app/data
+    ports:
+      # Bound to localhost only: the public reaches the site through Cloudflare (or your own proxy).
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - store-data:/app/data
+
+  # Cloudflare Tunnel: no open ports or SSL certificates needed on the server.
+  # In Cloudflare Zero Trust → Networks → Tunnels, create a tunnel, add the public hostname
+  # amritakalakriti.com → service http://app:3000, and put its token in .env as CLOUDFLARE_TUNNEL_TOKEN.
+  tunnel:
+    image: cloudflare/cloudflared:2026.9.3
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  store-data:

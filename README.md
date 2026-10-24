@@ -117,45 +117,103 @@ public/
   js/main.js, js/admin.js Front-end behaviour (no external libraries)
   images/                 Logo cut-outs, favicons, placeholder art
   uploads/                Images uploaded from the admin
-data/store.db             The database (back this up!)
+scripts/                  generate-art.js (placeholder art), backup.js (database backup)
+Dockerfile                Production container image
+docker-compose.yml        App + optional Cloudflare Tunnel
+data/store.db             The database (back this up!) — /app/data in Docker
 ```
 
 ---
 
-## Deploying to amritakalakriti.com
+## Deploying with Docker
 
-Any server with **Node.js 20 or newer** works, for example a small Ubuntu VPS from DigitalOcean, Hostinger VPS, AWS Lightsail or similar.
+The app ships as a container image. The `Dockerfile` builds a small production image that runs as a non-root user and has a built-in health check at `/healthz`.
+
+**Before you deploy, two rules matter:**
+1. **Mount a persistent volume at `/app/data`.** The SQLite database and every uploaded photo live there. Without a volume, a restart or redeploy **erases all orders, customers and photos**.
+2. **Run exactly one container.** SQLite is a single file, so two copies of the app would each keep their own separate data.
+
+### Settings (environment variables)
+
+Set these in `.env` (Docker Compose) or as environment variables on your platform. The full list is in `.env.example`.
+
+| Variable | Value |
+|---|---|
+| `SESSION_SECRET` | **Required.** A random string of 32+ characters; the app refuses to start without one. Generate with `openssl rand -hex 32`. |
+| `BASE_URL` | `https://amritakalakriti.com` |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The first admin account, created on the first start. |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Your payment keys. If left empty, checkout runs in demo mode. |
+| `BEHIND_CLOUDFLARE` | `1` when all traffic comes through Cloudflare, e.g. a Cloudflare Tunnel. |
+| `TRUST_PROXY` | `1` (the default) behind one proxy or load balancer. |
+
+The image already sets `NODE_ENV=production`, `PORT=3000` and `DATA_DIR=/app/data`.
+
+### Option A — Docker Compose on any server (recommended)
 
 ```bash
-# on the server
-git clone <your repo> amritakalakriti && cd amritakalakriti
+git clone https://github.com/bikashpatel/amritakalakriti.git && cd amritakalakriti
+cp .env.example .env && nano .env        # fill in the variables above
+docker compose up -d --build             # site on http://127.0.0.1:3000, data in the "store-data" volume
+```
+
+**Connect your Cloudflare domain with a Cloudflare Tunnel.** This needs no open ports, no Nginx and no SSL certificates.
+1. In the Cloudflare dashboard, go to **Zero Trust → Networks → Tunnels → Create a tunnel** and choose type **Cloudflared**.
+2. Add a **public hostname**: `amritakalakriti.com` (and `www`) pointing to the service `http://app:3000`.
+3. Copy the tunnel token into `.env` as `CLOUDFLARE_TUNNEL_TOKEN`, and set `BEHIND_CLOUDFLARE=1`.
+4. Run `docker compose --profile tunnel up -d`.
+
+### Option B — Build the image yourself and push it to a registry
+
+On an Apple Silicon Mac, build for the x86 servers that cloud providers use:
+
+```bash
+docker buildx build --platform linux/amd64 -t amritakalakriti .
+
+# Example: push to Google Artifact Registry
+gcloud artifacts repositories create web --repository-format=docker --location=asia-south1
+docker tag amritakalakriti asia-south1-docker.pkg.dev/<PROJECT_ID>/web/amritakalakriti:1
+docker push asia-south1-docker.pkg.dev/<PROJECT_ID>/web/amritakalakriti:1
+```
+
+Then run it with a persistent volume at `/app/data`. For example:
+
+```bash
+docker run -d --name amritakalakriti --restart unless-stopped \
+  -p 127.0.0.1:3000:3000 --env-file .env -v store-data:/app/data \
+  asia-south1-docker.pkg.dev/<PROJECT_ID>/web/amritakalakriti:1
+```
+
+> **About Google Cloud Run:** Cloud Run's disk is wiped whenever the service restarts, and it can start several copies of the app. Its Cloud Storage volume mounts are not safe for SQLite. Cloud Run is therefore **not a good fit as-is**. Use a VM or another host that gives one container a real persistent disk. Running on Cloud Run would mean moving the database to Cloud SQL.
+
+### Cloudflare notes
+- With a Tunnel, Cloudflare handles HTTPS automatically. Without a Tunnel (an A record pointing at your server), set **SSL/TLS → Full (strict)** and serve HTTPS from your server.
+- CSS and JavaScript links carry a version tag that changes with every deploy, so Cloudflare's cache never serves stale styles.
+- Razorpay sends webhooks to `/webhooks/razorpay`. If you enable Bot Fight Mode or other WAF rules, check in the Razorpay dashboard that webhooks are still delivered.
+
+### Backups
+
+```bash
+docker compose exec app node scripts/backup.js     # safe while the site is running
+```
+
+This writes `/app/data/backups/store-<date>.db` and keeps the newest 14. Copy the whole volume off the server regularly, for example once a night with cron. It holds the database, the backups and the `uploads/` photos.
+
+```bash
+docker run --rm -v amritakalakriti_store-data:/data -v "$PWD":/out alpine tar czf /out/ak-$(date +%F).tgz -C /data .
+```
+
+Run `docker volume ls` to see the volume's exact name.
+
+### Running without Docker
+
+Install Node.js 20 or newer, then:
+
+```bash
 npm ci --omit=dev
-cp .env.example .env && nano .env
-#   NODE_ENV=production
-#   BASE_URL=https://amritakalakriti.com
-#   SESSION_SECRET=<long random string>
-#   ADMIN_EMAIL / ADMIN_PASSWORD, Razorpay keys
-npm i -g pm2 && pm2 start server.js --name amritakalakriti && pm2 save && pm2 startup
+NODE_ENV=production node server.js
 ```
 
-Put **Nginx** in front of the app with HTTPS from Let's Encrypt (`sudo certbot --nginx -d amritakalakriti.com -d www.amritakalakriti.com`):
-
-```nginx
-server {
-  server_name amritakalakriti.com www.amritakalakriti.com;
-  client_max_body_size 20m;            # allow artwork photo uploads
-  location / {
-    proxy_pass http://127.0.0.1:3000;
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-  }
-}
-```
-
-Then point the domain's DNS **A record** at the server's IP address.
-
-**Backups:** copy `data/` (the database) and `public/uploads/` (artwork photos) regularly, for example with a nightly cron job.
+Keep it running with PM2 or systemd, and put a Cloudflare Tunnel or Nginx in front. Run backups with `npm run backup`.
 
 ---
 

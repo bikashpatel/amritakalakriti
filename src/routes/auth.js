@@ -2,11 +2,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { db } = require('../db');
-const { rateLimit, safeLocalPath } = require('../middleware');
+const { rateLimit, safeLocalPath, clientIp } = require('../middleware');
 
 const router = express.Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const perAccount = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, key: (req) => `${req.ip}|${String(req.body?.email || '').toLowerCase()}` });
+const perAccount = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, key: (req) => `${clientIp(req)}|${String(req.body?.email || '').toLowerCase()}` });
 const perIp = rateLimit({ windowMs: 15 * 60 * 1000, max: 40 });
 const authLimiter = [perIp, perAccount];
 // Compared against when the email is unknown, so response time does not reveal which emails have accounts.

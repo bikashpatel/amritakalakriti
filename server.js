@@ -16,10 +16,22 @@ seedIfEmpty();
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.set('trust proxy', 1); // behind Nginx / a hosting proxy, so secure cookies and req.ip work
+app.set('trust proxy', config.trustProxy); // so req.secure / req.ip are right behind Cloudflare or a load balancer
 app.disable('x-powered-by');
 
+// Health check for Docker / load balancers — answered before sessions so probes don't create any.
+app.get('/healthz', (req, res) => {
+  try {
+    db.prepare('SELECT 1').get();
+    res.type('text/plain').send('ok');
+  } catch {
+    res.status(503).type('text/plain').send('database unavailable');
+  }
+});
+
 app.use(mw.securityHeaders);
+// Uploaded artwork photos live in the data volume, not inside the image.
+app.use('/uploads', express.static(config.uploadDir, { maxAge: config.isProd ? '30d' : 0 }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: config.isProd ? '7d' : 0 }));
 
 // Razorpay webhooks need the raw body for signature checks, so they are mounted before the body parsers.
@@ -34,7 +46,8 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   rolling: true,
-  cookie: { httpOnly: true, sameSite: 'lax', secure: config.isProd, maxAge: 1000 * 60 * 60 * 24 * 14 },
+  // 'auto' marks the cookie Secure whenever the request arrived over HTTPS (via X-Forwarded-Proto behind a proxy).
+  cookie: { httpOnly: true, sameSite: 'lax', secure: config.isProd ? 'auto' : false, maxAge: 1000 * 60 * 60 * 24 * 14 },
 }));
 app.use(mw.flash);
 app.use(mw.currentUser);
@@ -68,9 +81,21 @@ setInterval(() => {
   try { expireStalePendingOrders(); } catch (e) { console.error('expire pending orders:', e); }
 }, 60 * 1000).unref();
 
-app.listen(config.port, () => {
+const server = app.listen(config.port, () => {
   console.log(`\n  AmritaKalakriti is running → ${config.baseUrl}`);
   console.log(`  Admin panel               → ${config.baseUrl}/admin`);
   const rzpMode = config.razorpay.keyId.startsWith('rzp_test_') ? 'Razorpay TEST keys' : 'Razorpay LIVE keys';
   console.log(`  Payments                  → ${require('./src/payments').isConfigured() ? rzpMode : 'DEMO mode (add Razorpay keys to .env)'}\n`);
 });
+
+// `docker stop` sends SIGTERM: finish in-flight requests, then close the database cleanly.
+function shutdown(signal) {
+  console.log(`${signal} received — shutting down`);
+  server.close(() => {
+    db.close();
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(0), 8000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

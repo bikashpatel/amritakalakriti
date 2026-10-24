@@ -1,5 +1,7 @@
 'use strict';
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const config = require('./config');
 const { db, getSettings } = require('./db');
 const helpers = require('./helpers');
@@ -36,6 +38,16 @@ function flash(req, res, next) {
   next();
 }
 
+// Short hash of the CSS/JS bundle, appended as ?v= so browsers and Cloudflare fetch fresh files after each deploy.
+const assetVersion = (() => {
+  const hash = crypto.createHash('sha1');
+  for (const dir of ['css', 'js']) {
+    const full = path.join(config.ROOT, 'public', dir);
+    for (const f of fs.readdirSync(full).sort()) hash.update(fs.readFileSync(path.join(full, f)));
+  }
+  return hash.digest('hex').slice(0, 10);
+})();
+
 const loadUser = db.prepare(`SELECT id, name, email, phone, role, is_active, address_line1, address_line2, city, state, pincode
                              FROM users WHERE id = ?`);
 
@@ -67,6 +79,7 @@ function locals(req, res, next) {
   res.locals.h = helpers;
   res.locals.formatINR = helpers.formatINR;
   res.locals.baseUrl = config.baseUrl;
+  res.locals.assetVersion = assetVersion;
   res.locals.title = '';
   res.locals.metaDescription = '';
   next();
@@ -116,8 +129,13 @@ function requireAdmin(req, res, next) {
   return res.status(403).render('pages/error', { title: 'Not allowed', code: 403, message: 'This area is for store administrators only.' });
 }
 
+// The visitor's address: Cloudflare's CF-Connecting-IP when the app sits behind Cloudflare, else req.ip.
+function clientIp(req) {
+  return (config.behindCloudflare && req.get('cf-connecting-ip')) || req.ip;
+}
+
 // Small in-memory limiter for login / register / contact forms.
-function rateLimit({ windowMs, max, key = (req) => req.ip }) {
+function rateLimit({ windowMs, max, key = clientIp }) {
   const hits = new Map();
   setInterval(() => {
     const now = Date.now();
@@ -155,5 +173,5 @@ function safeLocalPath(p, fallback = '/') {
 
 module.exports = {
   securityHeaders, flash, currentUser, locals, csrfToken, csrfProtect, requireCsrf, requireAuth, requireAdmin, rateLimit,
-  backUrl, safeLocalPath,
+  backUrl, safeLocalPath, clientIp,
 };
