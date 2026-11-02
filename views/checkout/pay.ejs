@@ -27,7 +27,34 @@
       <% }) %>
     </div>
 
-    <% if (mode === 'razorpay') { %>
+    <% if (mode === 'upi') { %>
+      <div class="upi-pay">
+        <section class="upi-step">
+          <h2 class="upi-step-title"><b>1</b> Pay <%= formatINR(order.total) %> by UPI</h2>
+          <a class="btn btn-gold btn-lg btn-block upi-app-btn" href="<%= upi.link %>"><svg class="icon"><use href="#i-phone"/></svg> Open UPI app to pay</a>
+          <div class="upi-qr">
+            <%- upi.qr %>
+            <p class="small muted">Scan with GPay, PhonePe, Paytm, BHIM or your bank’s UPI app</p>
+          </div>
+          <dl class="upi-details">
+            <div><dt>UPI ID</dt><dd><span class="mono"><%= upi.id %></span><button class="upi-copy" type="button" data-copy="<%= upi.id %>" data-copied="UPI ID copied." hidden><svg class="icon"><use href="#i-copy"/></svg>Copy</button></dd></div>
+            <div><dt>Name</dt><dd><%= upi.payee %></dd></div>
+            <div><dt>Amount</dt><dd><strong><%= formatINR(order.total) %></strong></dd></div>
+          </dl>
+          <p class="small muted">The amount and order number fill in automatically. If you enter the UPI ID yourself, pay exactly <%= formatINR(order.total) %> and add <strong><%= order.order_number %></strong> as the note.</p>
+        </section>
+        <form class="upi-step" action="/checkout/upi/<%= order.order_number %>" method="post" novalidate>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <h2 class="upi-step-title"><b>2</b> Send us the UPI reference number</h2>
+          <p class="small muted">After you pay, your UPI app shows a 12-digit number called <strong>UPI Ref No.</strong>, <strong>UTR</strong> or <strong>UPI transaction ID</strong>. We use it to match your payment.</p>
+          <div class="field">
+            <label for="upi_ref">UPI reference number</label>
+            <input id="upi_ref" name="upi_ref" inputmode="numeric" autocomplete="off" maxlength="16" placeholder="12 digits" required>
+          </div>
+          <button class="btn btn-dark btn-block" type="submit"><svg class="icon"><use href="#i-check"/></svg> I have paid — send reference</button>
+        </form>
+      </div>
+    <% } else if (mode === 'razorpay') { %>
       <button class="btn btn-gold btn-lg btn-block" type="button" data-razorpay
         data-key="<%= rzp.key %>" data-order-id="<%= rzp.orderId %>" data-amount="<%= rzp.amount %>"
         data-name="<%= settings.store_name %>" data-description="Order <%= order.order_number %>"
@@ -64,7 +91,7 @@
       </div>
     <% } %>
 
-    <p class="pay-timer"><svg class="icon"><use href="#i-clock"/></svg> We are holding these pieces for you for <%= expiresMinutes %> minutes.</p>
+    <p class="pay-timer"><svg class="icon"><use href="#i-clock"/></svg> We are holding these pieces for you for <%= expiresMinutes %> minutes<%= mode === 'upi' ? ' — please send your reference number within that time' : '' %>.</p>
     <p style="margin-top:8px"><a class="link small" href="/cart">Changed your mind? Return to cart</a></p>
   </div>
 </div>

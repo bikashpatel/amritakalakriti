@@ -51,9 +51,10 @@ function newOrderNumber() {
   return `AK${ymd}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
-const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+const ORDER_STATUSES = ['pending', 'verifying', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
 const ORDER_STATUS_LABELS = {
   pending: 'Awaiting payment',
+  verifying: 'Verifying payment',
   confirmed: 'Confirmed',
   processing: 'Being packed',
   shipped: 'Shipped',
@@ -61,7 +62,7 @@ const ORDER_STATUS_LABELS = {
   cancelled: 'Cancelled',
 };
 const PAYMENT_STATUSES = ['unpaid', 'paid', 'failed', 'refunded'];
-const PAYMENT_METHOD_LABELS = { razorpay: 'Online (Razorpay)', demo: 'Online (demo mode)', cod: 'Cash on delivery' };
+const PAYMENT_METHOD_LABELS = { upi: 'UPI', razorpay: 'Online (Razorpay)', demo: 'Online (demo mode)', cod: 'Cash on delivery' };
 
 // "2026-10-19 08:30:00" (UTC, as stored by SQLite) → "19 Oct 2026"
 function formatDate(s, withTime = false) {

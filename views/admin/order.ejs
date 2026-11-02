@@ -112,6 +112,29 @@
   </div>
 
   <aside class="detail-aside">
+    <% if (o.status === 'verifying') { %>
+      <section class="card card-pad form-card verify-card">
+        <h2 class="form-card-title">Check this UPI payment</h2>
+        <p class="small">Look in your bank or UPI app for <strong><%= formatINR(o.total) %></strong> with this reference number:</p>
+        <p class="verify-ref mono"><%= o.upi_ref %></p>
+        <p class="hint">Its note should read “Order <%= o.order_number %>”. Do not ship until the money is in your account — a reference number on its own is not proof of payment.</p>
+        <div class="btn-stack">
+          <form method="post" action="/admin/orders/<%= o.id %>/payment">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="note" value="UPI payment checked and received (reference <%= o.upi_ref %>)">
+            <button class="btn btn-dark btn-sm btn-block" type="submit" name="payment_status" value="paid"
+                    data-confirm="Confirm that <%= formatINR(o.total) %> with reference <%= o.upi_ref %> is in your account?"><svg class="icon"><use href="#i-check"/></svg>Payment received</button>
+          </form>
+          <form method="post" action="/admin/orders/<%= o.id %>/status">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="status" value="cancelled">
+            <input type="hidden" name="note" value="UPI payment not received — order cancelled">
+            <button class="btn btn-outline btn-sm btn-block" type="submit"
+                    data-confirm="Cancel this order because the payment never arrived? Its items go back into stock.">Not received — cancel order</button>
+          </form>
+        </div>
+      </section>
+    <% } %>
     <section class="card card-pad form-card">
       <h2 class="form-card-title">Order status</h2>
       <% if (o.status === 'cancelled') { %>
@@ -154,6 +177,7 @@
       <dl class="kv">
         <div><dt>Method</dt><dd><svg class="icon"><use href="#<%= isOnline ? 'i-card' : 'i-cash' %>"/></svg><%= PAYMENT_METHOD_LABELS[o.payment_method] %></dd></div>
         <div><dt>Status</dt><dd><span class="badge pay-<%= o.payment_status %>"><%= o.payment_status %></span></dd></div>
+        <% if (o.upi_ref) { %><div><dt>UPI reference</dt><dd class="mono break"><%= o.upi_ref %></dd></div><% } %>
         <% if (o.razorpay_order_id) { %><div><dt>Razorpay order</dt><dd class="mono break"><%= o.razorpay_order_id %></dd></div><% } %>
         <% if (o.razorpay_payment_id) { %><div><dt>Payment ID</dt><dd class="mono break"><%= o.razorpay_payment_id %></dd></div><% } %>
       </dl>
@@ -161,7 +185,7 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="field">
           <label for="p-note">Note <span class="optional">optional</span></label>
-          <input id="p-note" type="text" name="note" maxlength="300" placeholder="<%= o.payment_method === 'cod' ? 'e.g. Cash collected by courier' : 'e.g. Refund ID rfnd_…' %>">
+          <input id="p-note" type="text" name="note" maxlength="300" placeholder="<%= o.payment_method === 'cod' ? 'e.g. Cash collected by courier' : o.payment_method === 'upi' ? 'e.g. Refunded by UPI, ref …' : 'e.g. Refund ID rfnd_…' %>">
         </div>
         <div class="btn-stack">
           <% if (o.payment_status !== 'paid' && o.status !== 'cancelled') { %>
@@ -170,14 +194,14 @@
           <% } %>
           <% if (o.payment_status === 'paid') { %>
             <button class="btn btn-outline btn-sm" type="submit" name="payment_status" value="refunded"
-                    data-confirm="Record this payment as refunded? Issue the refund itself from your Razorpay dashboard (or in cash)."><svg class="icon"><use href="#i-return"/></svg>Mark as refunded</button>
+                    data-confirm="Record this payment as refunded? <%= o.payment_method === 'razorpay' ? 'Issue the refund itself from your Razorpay dashboard.' : 'Send the money back yourself (UPI transfer or cash).' %>"><svg class="icon"><use href="#i-return"/></svg>Mark as refunded</button>
           <% } %>
           <% if (o.payment_status === 'unpaid') { %>
             <button class="btn btn-ghost btn-sm" type="submit" name="payment_status" value="failed"
                     data-confirm="Mark this payment as failed?">Mark as failed</button>
           <% } %>
         </div>
-        <p class="hint">This records the payment state only — refunds are issued from your Razorpay dashboard.</p>
+        <p class="hint">This records the payment state only — <%= o.payment_method === 'razorpay' ? 'refunds are issued from your Razorpay dashboard' : 'send any refund yourself by UPI or bank transfer' %>.</p>
       </form>
     </section>
 

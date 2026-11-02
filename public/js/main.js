@@ -274,6 +274,17 @@
     window.addEventListener('load', () => { if (typeof window.Razorpay === 'function') open(); });
   }
 
+  /* ---------- Copy to clipboard (UPI ID on the payment page) ---------- */
+  if (navigator.clipboard) {
+    $$('[data-copy]').forEach((btn) => {
+      btn.hidden = false;
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.dataset.copy)
+          .then(() => toast(btn.dataset.copied || 'Copied.'), () => toast('Could not copy — please select the text instead.', { error: true }));
+      });
+    });
+  }
+
   /* ---------- Reveal on scroll ---------- */
   const reveals = $$('.reveal');
   if ('IntersectionObserver' in window && reveals.length) {

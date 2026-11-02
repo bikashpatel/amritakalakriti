@@ -1,11 +1,13 @@
 'use strict';
 // Razorpay integration (UPI, cards, net banking, wallets) using its REST API directly — no SDK needed.
-// Without RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET the store runs in demo mode: checkout shows a
-// simulated payment step so the full order flow can be tried without charging anyone.
+// It switches on as soon as RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are set. Without them, development
+// runs in demo mode (a simulated payment step, so the full order flow can be tried without charging
+// anyone) and production simply hides the Razorpay option — the demo gateway never reaches real customers.
 const crypto = require('crypto');
 const config = require('./config');
 
 const isConfigured = () => Boolean(config.razorpay.keyId && config.razorpay.keySecret);
+const demoMode = () => !config.isProd && !isConfigured();
 
 async function createRazorpayOrder({ amountRupees, receipt, notes = {} }) {
   const auth = Buffer.from(`${config.razorpay.keyId}:${config.razorpay.keySecret}`).toString('base64');
@@ -39,4 +41,4 @@ function verifyWebhookSignature(rawBody, signature) {
   return safeEqualHex(expected, signature);
 }
 
-module.exports = { isConfigured, createRazorpayOrder, verifyPaymentSignature, verifyWebhookSignature, keyId: () => config.razorpay.keyId };
+module.exports = { isConfigured, demoMode, createRazorpayOrder, verifyPaymentSignature, verifyWebhookSignature, keyId: () => config.razorpay.keyId };

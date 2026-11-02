@@ -4,10 +4,16 @@
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' });
 %>
 
-<% if (!paymentsLive) { %>
+<% if (k.toVerify) { %>
+  <div class="alert alert-info adm-notice">
+    <svg class="icon"><use href="#i-clock"/></svg>
+    <div><strong><%= k.toVerify %> UPI payment<%= k.toVerify === 1 ? '' : 's' %> to check</strong> — customers have sent their UPI reference numbers. <a class="link" href="/admin/orders?status=verifying">Check them against your bank or UPI app</a> before packing.</div>
+  </div>
+<% } %>
+<% if (!upiReady && !paymentsLive) { %>
   <div class="alert alert-info adm-notice">
     <svg class="icon"><use href="#i-info"/></svg>
-    <div><strong>Payments are in demo mode</strong> — add <code>RAZORPAY_KEY_ID</code> and <code>RAZORPAY_KEY_SECRET</code> to <code>.env</code> to accept real payments.</div>
+    <div><strong><%= paymentsDemo ? 'Online payments are in demo mode' : 'Online payments are not set up yet' %></strong> — add your UPI ID in <a class="link" href="/admin/settings#payments">Settings → Payments</a> to take UPI payments<%= paymentsDemo ? '' : '. Until then customers can only choose cash on delivery' %>.</div>
   </div>
 <% } %>
 
@@ -161,7 +167,7 @@
               <td class="nowrap"><%= h.formatDate(o.created_at, true) %></td>
               <td><%= o.ship_name %><span class="sub"><%= o.ship_city %></span></td>
               <td class="num"><%= formatINR(o.total) %></td>
-              <td><span class="badge pay-<%= o.payment_status %>"><%= o.payment_status %></span><span class="sub"><%= o.payment_method === 'cod' ? 'COD' : 'Online' %></span></td>
+              <td><span class="badge pay-<%= o.payment_status %>"><%= o.payment_status %></span><span class="sub"><%= { cod: 'COD', upi: 'UPI' }[o.payment_method] || 'Online' %></span></td>
               <td><span class="badge status-<%= o.status %>"><%= ORDER_STATUS_LABELS[o.status] %></span></td>
             </tr>
           <% }) %>

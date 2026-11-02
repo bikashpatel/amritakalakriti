@@ -5,8 +5,9 @@ const session = require('express-session');
 const multer = require('multer');
 
 const config = require('./src/config');
-const { db } = require('./src/db');
+const { db, getSettings } = require('./src/db');
 const SqliteStore = require('./src/session-store');
+const payments = require('./src/payments');
 const mw = require('./src/middleware');
 const { seedIfEmpty } = require('./src/seed');
 const { expireStalePendingOrders } = require('./src/orders');
@@ -84,8 +85,11 @@ setInterval(() => {
 const server = app.listen(config.port, () => {
   console.log(`\n  AmritaKalakriti is running → ${config.baseUrl}`);
   console.log(`  Admin panel               → ${config.baseUrl}/admin`);
-  const rzpMode = config.razorpay.keyId.startsWith('rzp_test_') ? 'Razorpay TEST keys' : 'Razorpay LIVE keys';
-  console.log(`  Payments                  → ${require('./src/payments').isConfigured() ? rzpMode : 'DEMO mode (add Razorpay keys to .env)'}\n`);
+  const { upi_enabled: upiOn, upi_id: upiId } = getSettings();
+  const rzp = payments.isConfigured() ? (config.razorpay.keyId.startsWith('rzp_test_') ? 'TEST keys' : 'LIVE keys')
+    : payments.demoMode() ? 'DEMO mode (add keys to .env)' : 'off (add keys to .env to switch it on)';
+  console.log(`  UPI payments              → ${upiOn === '1' && upiId ? upiId : 'not set up (Admin → Settings → Payments)'}`);
+  console.log(`  Razorpay                  → ${rzp}\n`);
 });
 
 // `docker stop` sends SIGTERM: finish in-flight requests, then close the database cleanly.

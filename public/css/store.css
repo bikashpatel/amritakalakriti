@@ -422,6 +422,27 @@ body {
 .demo-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
 .pay-timer { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--muted); margin-top: 16px; }
 .pay-timer .icon { width: 15px; height: 15px; }
+.upi-pay { display: grid; gap: 16px; margin-top: 24px; text-align: left; }
+.upi-step { padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--cream); }
+.upi-step-title { display: flex; align-items: center; gap: 10px; font-size: 1.3rem; margin-bottom: 14px; }
+.upi-step-title b { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--gold-pale); color: var(--gold-ink); font: 600 .85rem/1 var(--font-body); }
+.upi-qr { text-align: center; }
+.upi-qr svg { display: block; width: min(232px, 100%); height: auto; margin: 0 auto 8px; border-radius: 12px; box-shadow: 0 0 0 1px var(--line); }
+.pay-card .upi-app-btn { display: none; }
+.upi-details { display: grid; gap: 8px; margin: 16px 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.upi-details div { display: flex; justify-content: space-between; align-items: center; gap: 4px 12px; flex-wrap: wrap; }
+.upi-details dt { color: var(--muted); font-size: .86rem; }
+.upi-details dd { display: flex; align-items: center; gap: 8px; margin: 0; overflow-wrap: anywhere; }
+.upi-details .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92rem; }
+.upi-copy { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--paper); color: var(--gold-ink); font: 500 .78rem/1.2 var(--font-body); cursor: pointer; }
+.upi-copy:hover { border-color: var(--gold); }
+.upi-copy[hidden] { display: none; }
+.upi-copy .icon { width: 14px; height: 14px; }
+/* Phones open the UPI app directly; a QR code is only useful on another screen. */
+@media (hover: none) and (pointer: coarse) {
+  .pay-card .upi-app-btn { display: flex; }
+  .upi-qr { display: none; }
+}
 
 .success-hero { text-align: center; padding-block: clamp(40px, 7vw, 80px) 28px; }
 .success-mark { position: relative; width: 120px; height: 120px; margin: 0 auto 24px; display: grid; place-items: center; border-radius: 50%; background: var(--paper); box-shadow: 0 0 0 1px var(--gold-light), 0 0 0 10px var(--cream), 0 0 0 11px var(--line), var(--shadow); color: var(--gold); animation: bloom .9s var(--ease) both; }

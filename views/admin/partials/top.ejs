@@ -19,7 +19,7 @@
   const nav = [
     { group: 'Store', items: [
       { key: 'dashboard', href: '/admin', icon: 'i-grid', label: 'Dashboard' },
-      { key: 'orders', href: '/admin/orders', icon: 'i-bag', label: 'Orders', count: adminCounts.toFulfil, hint: 'to fulfil' },
+      { key: 'orders', href: '/admin/orders', icon: 'i-bag', label: 'Orders', count: adminCounts.toVerify + adminCounts.toFulfil, hint: 'to check or fulfil' },
       { key: 'products', href: '/admin/products', icon: 'i-image', label: 'Artworks' },
       { key: 'categories', href: '/admin/categories', icon: 'i-tag', label: 'Art forms' },
     ] },
@@ -67,9 +67,10 @@
     </nav>
 
     <div class="adm-side-foot">
-      <a class="adm-pay-status <%= paymentsLive ? 'is-live' : 'is-demo' %>" href="/admin/settings#payments">
+      <% const payOn = [upiReady && 'UPI', paymentsLive && 'Razorpay'].filter(Boolean); %>
+      <a class="adm-pay-status <%= payOn.length ? 'is-live' : 'is-demo' %>" href="/admin/settings#payments">
         <span class="dot" aria-hidden="true"></span>
-        <%= paymentsLive ? 'Razorpay connected' : 'Payments in demo mode' %>
+        <%= payOn.length ? `${payOn.join(' + ')} payments on` : paymentsDemo ? 'Payments in demo mode' : 'Online payments not set up' %>
       </a>
       <a class="adm-nav-link" href="/" target="_blank" rel="noopener">
         <svg class="icon"><use href="#i-home"/></svg><span>Open storefront</span><svg class="icon adm-ext"><use href="#i-external"/></svg>

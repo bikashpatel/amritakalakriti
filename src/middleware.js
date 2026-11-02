@@ -6,6 +6,7 @@ const config = require('./config');
 const { db, getSettings } = require('./db');
 const helpers = require('./helpers');
 const payments = require('./payments');
+const upi = require('./upi');
 
 function securityHeaders(req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -76,6 +77,8 @@ function locals(req, res, next) {
   res.locals.currentPath = req.path;
   res.locals.query = req.query;
   res.locals.paymentsLive = payments.isConfigured();
+  res.locals.paymentsDemo = payments.demoMode();
+  res.locals.upiReady = upi.isEnabled(res.locals.settings);
   res.locals.h = helpers;
   res.locals.formatINR = helpers.formatINR;
   res.locals.baseUrl = config.baseUrl;

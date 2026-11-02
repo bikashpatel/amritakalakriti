@@ -72,11 +72,26 @@ const markPaid = db.transaction((orderId, { razorpayPaymentId = null, note = 'Pa
     for (const i of items) q.takeStock.run(i.quantity, i.product_id, i.quantity);
   }
   db.prepare(`UPDATE orders SET payment_status = 'paid', razorpay_payment_id = coalesce(?, razorpay_payment_id),
-              status = CASE WHEN status IN ('pending','cancelled') THEN 'confirmed' ELSE status END,
+              status = CASE WHEN status IN ('pending','verifying','cancelled') THEN 'confirmed' ELSE status END,
               updated_at = datetime('now') WHERE id = ?`).run(razorpayPaymentId, orderId);
   const updated = q.byId.get(orderId);
   q.history.run(orderId, updated.status, note);
   return updated;
+});
+
+// Direct UPI: the customer says they have paid and sends the reference number. The order then waits in 'verifying'
+// (never auto-released) until the store checks the money arrived. If the reservation had already lapsed, the
+// reference is still recorded so the store can find the payment and refund it.
+const submitUpiRef = db.transaction((orderId, ref) => {
+  const lapsed = q.byId.get(orderId).status === 'cancelled';
+  db.prepare(`UPDATE orders SET upi_ref = ?, status = ?, updated_at = datetime('now'),
+              admin_note = CASE WHEN ? THEN trim(coalesce(admin_note, '') || ' UPI reference sent after cancellation — refund the payment if it arrived.')
+                           ELSE admin_note END WHERE id = ?`)
+    .run(ref, lapsed ? 'cancelled' : 'verifying', lapsed ? 1 : 0, orderId);
+  q.history.run(orderId, lapsed ? 'cancelled' : 'verifying', lapsed
+    ? `UPI reference ${ref} sent after the order was cancelled — refund due if the payment arrived`
+    : `UPI payment sent — reference ${ref}`);
+  return q.byId.get(orderId);
 });
 
 const cancelOrder = db.transaction((orderId, note = 'Order cancelled') => {
@@ -108,7 +123,7 @@ function updateStatus(orderId, status, note) {
 // Releases stock held by online orders whose payment was never completed.
 function expireStalePendingOrders() {
   const stale = db.prepare(`SELECT id FROM orders WHERE status = 'pending' AND payment_status != 'paid'
-                            AND payment_method IN ('razorpay','demo') AND created_at <= datetime('now', ?)`)
+                            AND payment_method IN ('upi','razorpay','demo') AND created_at <= datetime('now', ?)`)
     .all(`-${config.pendingOrderTtlMinutes} minutes`);
   for (const { id } of stale) cancelOrder(id, 'Payment not completed in time — reservation released');
   return stale.length;
@@ -119,9 +134,9 @@ function expireStalePendingOrders() {
 function releaseUserPendingOrders(userId) {
   if (!userId) return 0;
   const mine = db.prepare(`SELECT id FROM orders WHERE user_id = ? AND status = 'pending' AND payment_status != 'paid'
-                           AND payment_method IN ('razorpay','demo')`).all(userId);
+                           AND payment_method IN ('upi','razorpay','demo')`).all(userId);
   for (const { id } of mine) cancelOrder(id, 'Customer returned to cart before paying');
   return mine.length;
 }
 
-module.exports = { createOrder, markPaid, cancelOrder, updateStatus, expireStalePendingOrders, releaseUserPendingOrders, OrderError };
+module.exports = { createOrder, markPaid, submitUpiRef, cancelOrder, updateStatus, expireStalePendingOrders, releaseUserPendingOrders, OrderError };

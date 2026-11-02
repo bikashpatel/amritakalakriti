@@ -36,7 +36,7 @@ To reset the admin password to the one in `.env`, run `npm run seed -- --reset-a
 - **Artwork page:** image gallery and an **"On your wall"** preview that shows the piece to scale above a sofa. It also shows details, care and shipping info, reviews (with a "verified buyer" badge) and related works.
 - **Accounts:** register, sign in, saved address, change password.
 - **Cart:** add to cart without a page reload, quantity limits by stock, and a free-shipping progress bar.
-- **Checkout:** Indian address validation (states, 6-digit PIN code, mobile number), then **Razorpay** (UPI, cards, net banking, wallets) or **Cash on Delivery**.
+- **Checkout:** Indian address validation (states, 6-digit PIN code, mobile number), then **UPI** paid straight to the store's bank (QR code or UPI app link), **Razorpay** (cards, UPI, net banking, wallets, once its keys are added) or **Cash on Delivery**.
 - **My orders:** a progress tracker, courier and tracking number, a status timeline, and cancellation before dispatch.
 - **Wishlist**, **contact form** and **policy pages** (shipping, returns, privacy, terms). Razorpay requires these pages before it activates your account.
 
@@ -44,7 +44,7 @@ To reset the admin password to the one in `.env`, run `npm run seed -- --reset-a
 - **Dashboard:** revenue, orders to fulfil, a 30-day sales chart, top sellers and recent orders.
 - **Artworks:** add and edit artworks with multiple photos, price, "was" price, stock, featured and active flags.
 - **Art forms (categories):** name, description, cover image and display order.
-- **Orders:** filter and search, update status, add courier and tracking number, mark paid or refunded, notes, a printable invoice or packing slip, and CSV export.
+- **Orders:** filter and search, check UPI payments against their reference numbers, update status, add courier and tracking number, mark paid or refunded, notes, a printable invoice or packing slip, and CSV export.
 - **Customers:** order history and lifetime value; activate or deactivate accounts, promote to admin, reset passwords.
 - **Reviews:** hide or delete reviews.
 - **Messages and subscribers:** read contact-form messages; export subscribers as CSV.
@@ -57,17 +57,38 @@ To reset the admin password to the one in `.env`, run `npm run seed -- --reset-a
 - Every database query is parameterised.
 - Security headers include a strict Content Security Policy.
 - Prices and stock are always recalculated on the server.
-- **One-of-a-kind safety:** stock is reserved inside a database transaction when an order is placed, so two buyers can never both buy the same original. Unpaid online orders release the reservation after 30 minutes.
+- **One-of-a-kind safety:** stock is reserved inside a database transaction when an order is placed, so two buyers can never both buy the same original. Unpaid online orders release the reservation after 30 minutes; UPI orders keep it once the customer sends a payment reference, until the store confirms or cancels.
 - Razorpay payments are verified by HMAC signature in the browser flow and again by the webhook.
 - Uploaded images are checked by their file contents, not just their names.
 
 ---
 
-## Payments (Razorpay)
+## Payments
 
-Without keys, checkout runs in **demo mode**. The payment step shows a simulated gateway, so the whole flow can be tested and no money is charged.
+Customers can pay three ways. Each can be switched on or off in **Admin → Settings → Payments**.
 
-To take real payments:
+| Method | Money goes to | Confirmed by | Set up |
+|---|---|---|---|
+| **UPI** | Your bank account, directly | You, from the order page | Add your UPI ID in Admin → Settings |
+| **Razorpay** | Your Razorpay account | Automatically | Add keys to `.env` (below) |
+| **Cash on delivery** | The courier collects it | You, from the order page | Nothing |
+
+### UPI (direct to your bank)
+
+1. Get a **business UPI ID** from PhonePe Business, Paytm for Business, Google Pay for Business or your bank. Many UPI apps block website payments to personal UPI IDs.
+2. In **Admin → Settings → Payments**, tick UPI, enter the UPI ID and the name on that account, and save.
+
+At checkout the customer sees a QR code (on a computer) or an "Open UPI app" button (on a phone) with the amount and order number filled in. After paying they type the 12-digit UPI reference number (UTR) into the site, and the order moves to **Verifying payment**. The dashboard and the Orders menu show how many are waiting.
+
+To confirm one, open the order, find the payment in your bank or UPI app, and click **Payment received**. If it never arrived, click **Not received — cancel order** and the artwork goes back on sale. **Never ship before the money is in your account:** a reference number on its own is not proof of payment.
+
+Orders where the customer never sends a reference are cancelled after 30 minutes, like any other unpaid online order. Refunds for UPI orders are sent by you from your bank or UPI app.
+
+### Razorpay
+
+Razorpay switches on as soon as its keys are in `.env`; no code changes are needed. Without keys it is hidden on the live site. In development (`NODE_ENV` not `production`) it runs in **demo mode** instead: the payment step shows a simulated gateway, so the whole flow can be tested and no money is charged.
+
+To take Razorpay payments:
 
 1. Create a Razorpay account and complete KYC. The site already has the policy pages Razorpay asks for.
 2. In the Razorpay Dashboard go to **Account & Settings → API Keys** and generate keys. Start with **Test mode** keys (`rzp_test_…`).
@@ -77,9 +98,9 @@ To take real payments:
    RAZORPAY_KEY_SECRET=xxxxx
    ```
 4. Add a webhook under **Webhooks**. URL: `https://amritakalakriti.com/webhooks/razorpay`. Events: `payment.captured` and `order.paid`. Put its secret in `RAZORPAY_WEBHOOK_SECRET`. The webhook confirms payments even if a customer closes the browser before returning to the site.
-5. Restart the server. The console shows `Razorpay TEST keys`. When testing is done, swap in your live keys.
+5. Restart the server. The console shows `Razorpay → TEST keys`. When testing is done, swap in your live keys.
 
-Cash on Delivery and online payments can each be switched on or off in **Admin → Settings**.
+Once Razorpay is live you can keep UPI on as well, or switch it off in Admin → Settings.
 
 ---
 
@@ -108,6 +129,7 @@ src/
   seed.js                 First-run categories, artworks and admin user
   cart.js / orders.js     Cart pricing, order creation, stock reservation, payments state
   payments.js             Razorpay API and signature checks
+  upi.js                  Direct UPI: payment links, QR codes, reference numbers
   middleware.js           Auth, CSRF, flash messages, security headers, rate limiting
   uploads.js              Image upload handling
   routes/                 shop, auth, cart, checkout, account, admin, webhooks
@@ -144,7 +166,7 @@ Set these in `.env` (Docker Compose) or as environment variables on your platfor
 | `SESSION_SECRET` | **Required.** A random string of 32+ characters; the app refuses to start without one. Generate with `openssl rand -hex 32`. |
 | `BASE_URL` | `https://amritakalakriti.com` |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The first admin account, created on the first start. |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Your payment keys. If left empty, checkout runs in demo mode. |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Your Razorpay keys. If left empty, Razorpay is hidden in production and runs in demo mode in development. |
 | `BEHIND_CLOUDFLARE` | `1` when all traffic comes through Cloudflare, e.g. a Cloudflare Tunnel. |
 | `TRUST_PROXY` | `1` (the default) behind one proxy or load balancer. |
 

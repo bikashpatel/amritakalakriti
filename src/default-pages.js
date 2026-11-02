@@ -90,7 +90,7 @@ We use your information only to process and deliver orders, provide customer sup
 
 ## Payments
 
-Online payments are processed by Razorpay. Card, UPI and bank details are entered on Razorpay's secure checkout and are never stored on our servers.
+UPI payments are made in your own UPI app; we receive only the payment and the UPI reference number you send us. If card or net-banking payments are offered, they are processed by Razorpay, and those details are entered on Razorpay's secure checkout. We never see or store your card, bank or UPI PIN details.
 
 ## Cookies
 

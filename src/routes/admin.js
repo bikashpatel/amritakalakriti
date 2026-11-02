@@ -9,6 +9,7 @@ const { requireCsrf, backUrl } = require('../middleware');
 const { updateStatus, markPaid, OrderError } = require('../orders');
 const { upload, saveImages, removeImage, MAX_MB } = require('../uploads');
 const payments = require('../payments');
+const upi = require('../upi');
 const config = require('../config');
 
 const router = express.Router();
@@ -107,6 +108,7 @@ function flashRejected(req, rejected) {
 
 const navCounts = db.prepare(`SELECT
   (SELECT COUNT(*) FROM orders WHERE status IN ('confirmed','processing')) AS toFulfil,
+  (SELECT COUNT(*) FROM orders WHERE status = 'verifying') AS toVerify,
   (SELECT COUNT(*) FROM messages WHERE is_read = 0) AS unread`);
 
 router.use((req, res, next) => {
@@ -134,6 +136,7 @@ const dash = {
     (SELECT COUNT(*) FROM orders WHERE status != 'cancelled') AS ordersAll,
     (SELECT COUNT(*) FROM orders WHERE status IN ('confirmed','processing')) AS toFulfil,
     (SELECT COUNT(*) FROM orders WHERE status = 'pending') AS awaitingPayment,
+    (SELECT COUNT(*) FROM orders WHERE status = 'verifying') AS toVerify,
     (SELECT COUNT(*) FROM users WHERE role = 'customer') AS customers,
     (SELECT COUNT(*) FROM users WHERE role = 'customer' AND ${THIS_MONTH}) AS customersMonth,
     (SELECT COUNT(*) FROM products WHERE is_active = 1) AS activeProducts,
@@ -599,11 +602,11 @@ router.get('/orders/export.csv', (req, res) => {
     FROM orders o ${W} ORDER BY o.created_at DESC, o.id DESC`).all(params);
   const header = ['Order number', 'Placed (IST)', 'Status', 'Payment status', 'Payment method', 'Customer name', 'Email', 'Phone',
     'Address line 1', 'Address line 2', 'City', 'State', 'Pincode', 'Items', 'Item count', 'Subtotal (INR)', 'Shipping (INR)', 'Total (INR)',
-    'Courier', 'Tracking number', 'Razorpay order ID', 'Razorpay payment ID', 'Customer note', 'Admin note'];
+    'Courier', 'Tracking number', 'UPI reference', 'Razorpay order ID', 'Razorpay payment ID', 'Customer note', 'Admin note'];
   const data = rows.map((o) => [o.order_number, o.placed_ist, ORDER_STATUS_LABELS[o.status] || o.status, o.payment_status,
     PAYMENT_METHOD_LABELS[o.payment_method] || o.payment_method, o.ship_name, o.ship_email, o.ship_phone,
     o.ship_line1, o.ship_line2, o.ship_city, o.ship_state, o.ship_pincode, o.items, o.item_count, o.subtotal, o.shipping, o.total,
-    o.courier, o.tracking_number, o.razorpay_order_id, o.razorpay_payment_id, o.customer_note, o.admin_note]);
+    o.courier, o.tracking_number, o.upi_ref, o.razorpay_order_id, o.razorpay_payment_id, o.customer_note, o.admin_note]);
   const stamp = new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10);
   sendCsv(res, `amritakalakriti-orders-${stamp}.csv`, [header, ...data]);
 });
@@ -994,6 +997,9 @@ const SETTING_RULES = {
   about_short: { max: 2000, multiline: true },
   shipping_fee: { int: true },
   free_shipping_min: { int: true },
+  upi_enabled: { bool: true },
+  upi_id: { max: 100, upi: true },
+  upi_payee_name: { max: 50 },
   cod_enabled: { bool: true },
   online_payments_enabled: { bool: true },
   instagram_url: { url: true },
@@ -1007,6 +1013,7 @@ function renderSettings(res, { form, errors = {}, pwErrors = {}, status = 200 })
     title: 'Settings', section: 'settings', form, errors, pwErrors,
     razorpay: {
       live: payments.isConfigured(),
+      demo: payments.demoMode(),
       keyMode: config.razorpay.keyId ? (config.razorpay.keyId.startsWith('rzp_live_') ? 'Live keys' : 'Test keys') : '',
       webhook: Boolean(config.razorpay.webhookSecret),
     },
@@ -1015,7 +1022,7 @@ function renderSettings(res, { form, errors = {}, pwErrors = {}, status = 200 })
 }
 const SETTING_GROUPED = new Set(['store_name', 'store_tagline', 'store_email', 'store_phone', 'store_whatsapp', 'store_address', 'gstin',
   'announcement', 'hero_title', 'hero_subtitle', 'about_short', 'shipping_fee', 'free_shipping_min', 'cod_enabled',
-  'online_payments_enabled', 'instagram_url', 'facebook_url', 'youtube_url']);
+  'online_payments_enabled', 'upi_enabled', 'upi_id', 'upi_payee_name', 'instagram_url', 'facebook_url', 'youtube_url']);
 
 router.get('/settings', (req, res) => {
   renderSettings(res, { form: { ...res.locals.settings } });
@@ -1038,11 +1045,14 @@ router.post('/settings', (req, res) => {
     else if (rule.digits && v && !/^\d{10,15}$/.test(v.replace(/[\s+-]/g, ''))) errors[key] = 'Digits only, with country code — e.g. 919876543210.';
     else if (rule.url && v && !/^https?:\/\/\S+$/i.test(v)) errors[key] = 'Use a full link starting with https://';
     else if (rule.gstin && v && !/^[0-9]{2}[A-Z0-9]{13}$/.test(v.toUpperCase())) errors[key] = 'A GSTIN is 15 characters, e.g. 21ABCDE1234F1Z5 — or leave blank.';
+    else if (rule.upi && v && !upi.isValidId(v)) errors[key] = 'A UPI ID looks like name@bank, e.g. amritakalakriti@ybl — or leave blank.';
     if (rule.digits) v = v.replace(/[\s+-]/g, '');
     if (rule.gstin) v = v.toUpperCase();
     form[key] = v;
   }
-  if (form.cod_enabled === '0' && form.online_payments_enabled === '0') {
+  // UPI is only offered once it has a UPI ID, and Razorpay only with keys (or demo mode, outside production).
+  const razorpayUsable = payments.isConfigured() || payments.demoMode();
+  if (form.cod_enabled === '0' && !upi.isEnabled(form) && !(form.online_payments_enabled === '1' && razorpayUsable)) {
     errors.payments = 'Keep at least one payment method switched on, or customers cannot check out.';
   }
   if (Object.keys(errors).length) return renderSettings(res, { form, errors, status: 422 });

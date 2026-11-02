@@ -43,10 +43,22 @@
 
       <section class="card form-section">
         <h2><b>2</b> Payment</h2>
+        <% const chosen = options[form.payment] ? form.payment : options.upi ? 'upi' : options.online ? 'online' : 'cod'; %>
         <div class="pay-options">
+          <% if (options.upi) { %>
+            <label class="pay-option">
+              <input type="radio" name="payment" value="upi" <%= chosen === 'upi' ? 'checked' : '' %>>
+              <div>
+                <strong>UPI</strong>
+                <small>Scan a QR code, or tap to open your UPI app on a phone</small>
+                <div class="pay-logos"><span>GPay</span><span>PhonePe</span><span>Paytm</span><span>BHIM</span><span>Any UPI app</span></div>
+              </div>
+              <svg class="icon"><use href="#i-qr"/></svg>
+            </label>
+          <% } %>
           <% if (options.online) { %>
             <label class="pay-option">
-              <input type="radio" name="payment" value="online" <%= form.payment !== 'cod' ? 'checked' : '' %>>
+              <input type="radio" name="payment" value="online" <%= chosen === 'online' ? 'checked' : '' %>>
               <div>
                 <strong>Pay online<% if (options.onlineMethod === 'demo') { %><span class="demo-flag">Demo mode</span><% } %></strong>
                 <small>Secure payment via Razorpay</small>
@@ -57,12 +69,12 @@
           <% } %>
           <% if (options.cod) { %>
             <label class="pay-option">
-              <input type="radio" name="payment" value="cod" <%= form.payment === 'cod' || !options.online ? 'checked' : '' %>>
+              <input type="radio" name="payment" value="cod" <%= chosen === 'cod' ? 'checked' : '' %>>
               <div><strong>Cash on delivery</strong><small>Pay in cash or UPI when your artwork arrives</small></div>
               <svg class="icon"><use href="#i-cash"/></svg>
             </label>
           <% } %>
-          <% if (!options.online && !options.cod) { %>
+          <% if (!options.upi && !options.online && !options.cod) { %>
             <div class="alert alert-info"><svg class="icon"><use href="#i-info"/></svg> Ordering is paused right now. Please contact us to buy an artwork.</div>
           <% } %>
         </div>
@@ -87,7 +99,7 @@
       <div class="summary-row"><span>Subtotal</span><span><%= formatINR(cart.subtotal) %></span></div>
       <div class="summary-row"><span>Shipping</span><span><%= cart.shipping ? formatINR(cart.shipping) : 'Free' %></span></div>
       <div class="summary-row total"><span>Total</span><span class="price"><%= formatINR(cart.total) %></span></div>
-      <button class="btn btn-gold btn-lg btn-block" type="submit" <%= !options.online && !options.cod ? 'disabled' : '' %>>Place order <svg class="icon"><use href="#i-arrow-right"/></svg></button>
+      <button class="btn btn-gold btn-lg btn-block" type="submit" <%= !options.upi && !options.online && !options.cod ? 'disabled' : '' %>>Place order <svg class="icon"><use href="#i-arrow-right"/></svg></button>
       <p class="summary-note"><svg class="icon"><use href="#i-shield"/></svg> Your payment details are never stored on our site.</p>
       <p class="summary-note" style="margin-top:4px">By placing this order you agree to our <a class="link" href="/pages/terms">terms</a>.</p>
     </aside>

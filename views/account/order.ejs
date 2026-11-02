@@ -20,7 +20,9 @@
           <a class="btn btn-gold btn-sm" href="/checkout/pay/<%= order.order_number %>">Complete payment</a>
         <% } %>
       </div>
-      <% if (order.status !== 'cancelled' && order.status !== 'pending') { %>
+      <% if (order.status === 'verifying') { %>
+        <div class="alert alert-info" style="margin:4px 0 0"><svg class="icon"><use href="#i-clock"/></svg><span>We are checking that your UPI payment (reference <strong><%= order.upi_ref %></strong>) has reached us. Your order is confirmed as soon as it does.</span></div>
+      <% } else if (order.status !== 'cancelled' && order.status !== 'pending') { %>
         <div class="progress-track" aria-label="Order progress">
           <% steps.forEach((s, i) => { %><div class="<%= i <= reached ? 'is-done' : '' %>"><%= h.ORDER_STATUS_LABELS[s] %></div><% }) %>
         </div>

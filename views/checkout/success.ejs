@@ -1,12 +1,16 @@
 <%- include('../partials/header') %>
-<% const refundDue = order.status === 'cancelled' && order.payment_status === 'paid'; %>
+<% const refundDue = order.status === 'cancelled' && order.payment_status === 'paid'; const verifying = order.status === 'verifying'; %>
 
 <section class="success-hero">
   <div class="container container-narrow">
-    <div class="success-mark"><svg class="icon"><use href="#i-<%= refundDue ? 'info' : 'lotus' %>"/></svg></div>
+    <div class="success-mark"><svg class="icon"><use href="#i-<%= refundDue ? 'info' : verifying ? 'clock' : 'lotus' %>"/></svg></div>
     <% if (refundDue) { %>
       <h1>We received your payment, but…</h1>
       <p class="lead muted">The artwork was reserved by someone else before your payment completed. We are sorry! A full refund of <%= formatINR(order.total) %> will be issued to your original payment method within 5–7 working days.</p>
+    <% } else if (verifying) { %>
+      <p class="eyebrow">धन्यवाद · Thank you</p>
+      <h1>We are checking your payment</h1>
+      <p class="lead muted">Thank you, <%= order.ship_name.split(' ')[0] %>! We have your UPI reference <strong><%= order.upi_ref %></strong>. Your order is confirmed as soon as the <%= formatINR(order.total) %> payment shows in our account — you can follow it in My Orders.</p>
     <% } else { %>
       <p class="eyebrow">धन्यवाद · Thank you</p>
       <h1>Your art is on its way home</h1>

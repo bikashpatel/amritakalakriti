@@ -134,8 +134,26 @@
     </div>
     <div class="settings-fields">
       <label class="check check-block">
+        <input type="checkbox" name="upi_enabled" value="1"<%= v('upi_enabled') === '1' ? ' checked' : '' %>>
+        <span><strong>UPI, paid straight to your bank</strong><span class="hint">Customers scan a QR code or open their UPI app, pay you directly and send the 12-digit UPI reference. No fees. Check each payment has arrived, then confirm it on the order page before shipping.</span></span>
+      </label>
+      <div class="form-row">
+        <div class="field<%= fe('upi_id') %>">
+          <label for="s-upi-id">Your UPI ID</label>
+          <input id="s-upi-id" type="text" name="upi_id" value="<%= v('upi_id') %>" maxlength="100" placeholder="yourshop@ybl" autocomplete="off" spellcheck="false">
+          <%- include('partials/err', { msg: errors.upi_id }) %>
+          <p class="hint">Use a business UPI ID (PhonePe Business, Paytm for Business, Google Pay for Business or your bank). Many UPI apps block website payments to personal UPI IDs.<% if (v('upi_enabled') === '1' && !v('upi_id')) { %> <strong>UPI is not offered at checkout until you add one.</strong><% } %></p>
+        </div>
+        <div class="field<%= fe('upi_payee_name') %>">
+          <label for="s-upi-name">Name shown to customers</label>
+          <input id="s-upi-name" type="text" name="upi_payee_name" value="<%= v('upi_payee_name') %>" maxlength="50" placeholder="<%= v('store_name') %>">
+          <%- include('partials/err', { msg: errors.upi_payee_name }) %>
+          <p class="hint">Should match the name on your UPI account. Leave blank to use the store name.</p>
+        </div>
+      </div>
+      <label class="check check-block">
         <input type="checkbox" name="online_payments_enabled" value="1"<%= v('online_payments_enabled') === '1' ? ' checked' : '' %>>
-        <span><strong>Online payments</strong><span class="hint">UPI, cards, net banking and wallets through Razorpay<%= razorpay.live ? '' : ' (simulated while in demo mode)' %>.</span></span>
+        <span><strong>Razorpay</strong><span class="hint">Cards, UPI, net banking and wallets, confirmed automatically. <%= razorpay.live ? '' : razorpay.demo ? 'Simulated while in demo mode.' : 'Appears at checkout once Razorpay keys are added to the server.' %></span></span>
       </label>
       <label class="check check-block">
         <input type="checkbox" name="cod_enabled" value="1"<%= v('cod_enabled') === '1' ? ' checked' : '' %>>
@@ -144,7 +162,7 @@
       <%- include('partials/err', { msg: errors.payments }) %>
 
       <div class="status-panel <%= razorpay.live ? 'is-live' : 'is-demo' %>">
-        <p class="status-panel-title"><span class="dot" aria-hidden="true"></span>Razorpay: <%= razorpay.live ? `connected (${razorpay.keyMode.toLowerCase()})` : 'demo mode' %></p>
+        <p class="status-panel-title"><span class="dot" aria-hidden="true"></span>Razorpay: <%= razorpay.live ? `connected (${razorpay.keyMode.toLowerCase()})` : razorpay.demo ? 'demo mode' : 'not connected' %></p>
         <dl class="kv">
           <div><dt>RAZORPAY_KEY_ID</dt><dd><%= razorpay.live ? 'Set' : 'Not set' %></dd></div>
           <div><dt>RAZORPAY_KEY_SECRET</dt><dd><%= razorpay.live ? 'Set' : 'Not set' %></dd></div>

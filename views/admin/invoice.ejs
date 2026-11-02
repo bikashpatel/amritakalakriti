@@ -96,7 +96,7 @@
     <div class="inv-meta">
       <% if (!slip) { %>
         <p><span class="inv-label">Payment</span><%= PAYMENT_METHOD_LABELS[o.payment_method] %> — <strong><%= o.payment_status === 'paid' ? 'Paid' : o.payment_status === 'refunded' ? 'Refunded' : o.payment_method === 'cod' ? 'To be collected on delivery' : 'Not paid' %></strong></p>
-        <% if (o.razorpay_payment_id) { %><p class="small">Payment ref: <span class="mono"><%= o.razorpay_payment_id %></span></p><% } %>
+        <% if (o.razorpay_payment_id || o.upi_ref) { %><p class="small">Payment ref: <span class="mono"><%= o.razorpay_payment_id || o.upi_ref %></span></p><% } %>
       <% } else { %>
         <p><span class="inv-label">Contents</span><%= itemCount %> item<%= itemCount === 1 ? '' : 's' %><% if (o.payment_method === 'cod' && o.payment_status !== 'paid') { %> · <strong>Collect <%= formatINR(o.total) %> on delivery</strong><% } %></p>
       <% } %>

@@ -180,6 +180,7 @@ input[type=checkbox], input[type=radio] { accent-color: var(--gold-ink); width: 
 .badge-sage { background: var(--sage-pale); color: #3F5530; border-color: #CFDABF; }
 .badge-dark { background: var(--brown); color: #FFF4E2; border-color: var(--brown); }
 .status-pending { background: #FBF0D9; color: #7A5410; border-color: #EED9A8; }
+.status-verifying { background: #FCE6CC; color: #84440B; border-color: #F0C894; }
 .status-confirmed { background: #E7EEF6; color: #2F4C6E; border-color: #C9D7E8; }
 .status-processing { background: #EEE7F5; color: #553B74; border-color: #D9CBE8; }
 .status-shipped { background: #E2F0EF; color: #245553; border-color: #BFDCD9; }
