@@ -45,12 +45,8 @@ code { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-si
 .adm-side-head { display: flex; align-items: center; justify-content: space-between; padding: 22px 18px 18px 20px; border-bottom: 1px solid var(--side-line); }
 .adm-brand { display: flex; align-items: center; gap: 12px; color: var(--side-ink-strong); }
 .adm-brand:hover { color: var(--side-ink-strong); }
-.adm-brand-badge {
-  width: 52px; height: 52px; flex: none; display: grid; place-items: center;
-  background: var(--cream); border-radius: 14px;
-  box-shadow: 0 0 0 1px rgba(226, 194, 133, .55), 0 6px 16px rgba(0, 0, 0, .25);
-}
-.adm-brand-badge img { width: 42px; height: auto; }
+.adm-brand-badge { width: 52px; height: 52px; flex: none; }
+.adm-brand-badge img { display: block; width: 100%; height: auto; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, .3)); }
 .adm-brand-text { display: grid; gap: 3px; }
 .adm-brand-name { font: 600 1.3rem/1 var(--font-display); letter-spacing: .01em; color: var(--side-ink-strong); }
 .adm-brand-eyebrow { font: 500 .6rem/1 var(--font-caps); letter-spacing: .34em; text-transform: uppercase; color: var(--gold-light); }
@@ -464,8 +460,8 @@ p.hint { margin: 0 0 10px; }
 .invoice { max-width: 860px; margin: 0 auto 48px; padding: clamp(24px, 5vw, 56px); background: #fff; border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow); color: var(--brown-2); font-size: .95rem; }
 .inv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding-bottom: 24px; border-bottom: 2px solid var(--gold-light); }
 .inv-brand { display: flex; align-items: center; gap: 16px; }
-.inv-brand > img { width: 84px; height: auto; }
-.inv-wordmark { width: 210px; height: auto; }
+.inv-brand > img { width: 76px; height: auto; }
+.inv-logo { width: 240px; height: auto; }
 .inv-tagline { margin: 6px 0 0; font: italic 400 1rem/1.3 var(--font-display); color: var(--gold-ink); }
 .inv-title { text-align: right; }
 .inv-title p { margin: 0; }

@@ -20,7 +20,7 @@
   <div class="container footer-grid">
     <div class="footer-brand">
       <a href="/" class="footer-medallion" aria-label="<%= settings.store_name %> home">
-        <img src="/images/emblem-sm.png" alt="" width="220" height="144">
+        <img src="/images/brand-icon-sm.webp" alt="" width="240" height="240">
       </a>
       <p class="footer-name"><%= settings.store_name %></p>
       <p class="footer-deva deva">अमृता कलाकृति</p>
@@ -61,7 +61,9 @@
   </div>
   <div class="container footer-bottom">
     <p>© <%= new Date().getFullYear() %> <%= settings.store_name %> · amritakalakriti.com · Handmade in India</p>
-    <p class="pay-methods"><svg class="icon"><use href="#i-lock"/></svg> Secure payments: UPI · Cards · Net Banking · Wallets<%= settings.cod_enabled === '1' ? ' · Cash on Delivery' : '' %></p>
+    <% const razorpayOn = paymentsLive && settings.online_payments_enabled === '1';
+       const payNames = [(upiReady || razorpayOn) && 'UPI', razorpayOn && 'Cards · Net Banking · Wallets', settings.cod_enabled === '1' && 'Cash on Delivery'].filter(Boolean); %>
+    <% if (payNames.length) { %><p class="pay-methods"><svg class="icon"><use href="#i-lock"/></svg> Secure payments: <%= payNames.join(' · ') %></p><% } %>
   </div>
   <div class="container footer-credit">
     <p>This application is designed, developed &amp; maintained by <a href="https://elarxsys.com" target="_blank" rel="noopener">ELARXSYS.COM</a></p>

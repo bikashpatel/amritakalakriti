@@ -1,7 +1,7 @@
 <% const soldOut = p.stock <= 0; const onSale = p.compare_at_price && p.compare_at_price > p.price; const saved = wishlistIds.has(p.id); %>
 <article class="product-card<%= soldOut ? ' is-sold' : '' %>">
   <a class="pc-media" href="/art/<%= p.slug %>" tabindex="-1" aria-hidden="true">
-    <span class="pc-frame"><img src="<%= p.image || '/images/emblem-md.png' %>" alt="" loading="lazy" decoding="async"></span>
+    <span class="pc-frame"><img src="<%= p.image || '/images/brand-icon.webp' %>" alt="" loading="lazy" decoding="async"></span>
     <span class="pc-badges">
       <% if (soldOut) { %><span class="badge badge-dark">Sold</span>
       <% } else if (onSale) { %><span class="badge badge-rose">Save <%= Math.round((1 - p.price / p.compare_at_price) * 100) %>%</span>
