@@ -179,7 +179,7 @@
         <div><dt>Status</dt><dd><span class="badge pay-<%= o.payment_status %>"><%= o.payment_status %></span></dd></div>
         <% if (o.upi_ref) { %><div><dt>UPI reference</dt><dd class="mono break"><%= o.upi_ref %></dd></div><% } %>
         <% if (o.razorpay_order_id) { %><div><dt>Razorpay order</dt><dd class="mono break"><%= o.razorpay_order_id %></dd></div><% } %>
-        <% if (o.razorpay_payment_id) { %><div><dt>Payment ID</dt><dd class="mono break"><%= o.razorpay_payment_id %></dd></div><% } %>
+        <% if (o.razorpay_payment_id) { %><div><dt>Payment ID</dt><dd class="mono break"><a class="link" href="https://dashboard.razorpay.com/app/payments/<%= encodeURIComponent(o.razorpay_payment_id) %>" target="_blank" rel="noopener" title="Open in the Razorpay dashboard (refunds are issued there)"><%= o.razorpay_payment_id %></a></dd></div><% } %>
       </dl>
       <form method="post" action="/admin/orders/<%= o.id %>/payment" class="pay-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">

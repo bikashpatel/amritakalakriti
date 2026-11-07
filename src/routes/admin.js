@@ -3,7 +3,7 @@
 // (multipart routes call requireCsrf themselves once multer has parsed the body).
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { db, setSetting, DEFAULT_SETTINGS } = require('../db');
+const { db, getSecret, setSetting, DEFAULT_SETTINGS } = require('../db');
 const h = require('../helpers');
 const { requireCsrf, backUrl } = require('../middleware');
 const { updateStatus, markPaid, OrderError } = require('../orders');
@@ -1011,14 +1011,19 @@ const SETTING_RULES = {
 };
 for (const key of Object.keys(DEFAULT_SETTINGS)) if (!SETTING_RULES[key]) SETTING_RULES[key] = { max: 500 };
 
-function renderSettings(res, { form, errors = {}, pwErrors = {}, status = 200 }) {
+function renderSettings(res, { form, errors = {}, pwErrors = {}, rzpErrors = {}, rzpKeyId, status = 200 }) {
+  const k = payments.keys();
   res.status(status).render('admin/settings', {
-    title: 'Settings', section: 'settings', form, errors, pwErrors,
+    title: 'Settings', section: 'settings', form, errors, pwErrors, rzpErrors,
     razorpay: {
       live: payments.isConfigured(),
       demo: payments.demoMode(),
-      keyMode: config.razorpay.keyId ? (config.razorpay.keyId.startsWith('rzp_live_') ? 'Live keys' : 'Test keys') : '',
-      webhook: Boolean(config.razorpay.webhookSecret),
+      test: payments.testMode(),
+      fromEnv: k.source === 'env',
+      keyId: rzpKeyId ?? k.keyId, // the Key ID is public (every checkout page carries it); the secrets are never shown
+      hasSecret: Boolean(k.keySecret),
+      webhook: Boolean(k.webhookSecret),
+      webhookUrl: `${config.baseUrl}/webhooks/razorpay`,
     },
     heroChoices: heroChoices.all(),
     extraKeys: Object.keys(DEFAULT_SETTINGS).filter((k) => !SETTING_GROUPED.has(k)),
@@ -1066,6 +1071,54 @@ router.post('/settings', (req, res) => {
   db.transaction(() => { for (const [k, v] of Object.entries(form)) setSetting(k, v); })();
   req.flash('success', 'Settings saved. The storefront is already showing the changes.');
   res.redirect('/admin/settings');
+});
+
+// Razorpay keys get their own form so the secrets are not sent back with every settings save. A blank secret
+// field keeps the saved one. Keys are tried against Razorpay before they are stored.
+const RAZORPAY_KEY_ID = /^rzp_(test|live)_[A-Za-z0-9]{8,32}$/;
+router.post('/settings/razorpay', async (req, res) => {
+  const b = req.body || {};
+  if (payments.keys().source === 'env') {
+    req.flash('error', 'Razorpay keys are set in the server’s .env file, so they can only be changed there.');
+    return res.redirect('/admin/settings#razorpay');
+  }
+  const pendingOrders = db.prepare(`UPDATE orders SET razorpay_order_id = NULL
+    WHERE payment_method = 'razorpay' AND status = 'pending' AND payment_status != 'paid'`);
+  if (b.action === 'disconnect') {
+    db.transaction(() => {
+      for (const key of ['razorpay_key_id', 'razorpay_key_secret', 'razorpay_webhook_secret']) setSetting(key, '');
+    })();
+    req.flash('success', 'Razorpay disconnected. Customers can no longer choose it at checkout.');
+    return res.redirect('/admin/settings#razorpay');
+  }
+  const keyId = str(b.razorpay_key_id, 60);
+  const keySecret = str(b.razorpay_key_secret, 100) || getSecret('razorpay_key_secret');
+  const webhookSecret = str(b.razorpay_webhook_secret, 200) || getSecret('razorpay_webhook_secret');
+  const rzpErrors = {};
+  if (!RAZORPAY_KEY_ID.test(keyId)) rzpErrors.razorpay_key_id = 'Paste the Key ID from Razorpay — it starts with rzp_test_ or rzp_live_.';
+  if (!keySecret) rzpErrors.razorpay_key_secret = 'Paste the Key Secret Razorpay showed when you generated the key.';
+  if (!Object.keys(rzpErrors).length) {
+    const problem = await payments.checkKeys(keyId, keySecret);
+    if (problem) rzpErrors.razorpay_key_secret = problem;
+  }
+  if (Object.keys(rzpErrors).length) {
+    return renderSettings(res, { form: { ...res.locals.settings }, rzpErrors, rzpKeyId: keyId, status: 422 });
+  }
+  const switched = keyId !== payments.keys().keyId;
+  db.transaction(() => {
+    setSetting('razorpay_key_id', keyId);
+    setSetting('razorpay_key_secret', keySecret);
+    setSetting('razorpay_webhook_secret', webhookSecret);
+    // Razorpay orders belong to one account: unpaid checkouts start a fresh one under the new keys.
+    if (switched) pendingOrders.run();
+  })();
+  const test = keyId.startsWith('rzp_test_');
+  req.flash('success', [
+    `Razorpay connected with ${test ? 'TEST' : 'LIVE'} keys.`,
+    test ? 'Place a test order to try it — no real money moves. Switch to live keys before launch.' : 'Customers can now pay by card, UPI, net banking and wallets.',
+    webhookSecret ? '' : 'Next, add the webhook below so payments are confirmed even when a customer closes the page early.',
+  ].filter(Boolean).join(' '));
+  res.redirect('/admin/settings#razorpay');
 });
 
 router.post('/settings/password', async (req, res) => {

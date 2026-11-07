@@ -78,6 +78,7 @@ function locals(req, res, next) {
   res.locals.query = req.query;
   res.locals.paymentsLive = payments.isConfigured();
   res.locals.paymentsDemo = payments.demoMode();
+  res.locals.paymentsTest = payments.testMode();
   res.locals.upiReady = upi.isEnabled(res.locals.settings);
   res.locals.h = helpers;
   res.locals.formatINR = helpers.formatINR;

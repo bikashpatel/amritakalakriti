@@ -70,6 +70,7 @@
         <input type="hidden" name="razorpay_signature">
       </form>
       <p class="summary-note"><svg class="icon"><use href="#i-shield"/></svg> UPI · Cards · Net Banking · Wallets — powered by Razorpay</p>
+      <% if (paymentsTest) { %><p class="small muted"><strong>Test mode:</strong> no real money is charged. Pay with one of Razorpay’s test cards, or the UPI ID <code>success@razorpay</code>.</p><% } %>
       <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
     <% } else { %>
       <div class="demo-gateway">

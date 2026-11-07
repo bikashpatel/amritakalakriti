@@ -221,9 +221,18 @@ const DEFAULT_PAGES = require('./default-pages');
 const insertPage = db.prepare('INSERT OR IGNORE INTO pages (slug, title, body) VALUES (?, ?, ?)');
 for (const p of DEFAULT_PAGES) insertPage.run(p.slug, p.title, p.body);
 
+// Razorpay keys entered in Admin → Settings live in the same table but never in getSettings(), so page
+// templates (which all receive the settings) cannot show them. Read them with getSecret().
+const SECRET_SETTINGS = new Set(['razorpay_key_id', 'razorpay_key_secret', 'razorpay_webhook_secret']);
+
 function getSettings() {
-  const rows = db.prepare('SELECT key, value FROM settings').all();
+  const rows = db.prepare('SELECT key, value FROM settings').all().filter((r) => !SECRET_SETTINGS.has(r.key));
   return Object.fromEntries(rows.map((r) => [r.key, r.value ?? '']));
+}
+
+function getSecret(key) {
+  if (!SECRET_SETTINGS.has(key)) throw new Error(`${key} is not a secret setting`);
+  return db.prepare('SELECT value FROM settings WHERE key = ?').get(key)?.value || '';
 }
 
 function setSetting(key, value) {
@@ -231,4 +240,4 @@ function setSetting(key, value) {
     .run(key, value);
 }
 
-module.exports = { db, getSettings, setSetting, DEFAULT_SETTINGS };
+module.exports = { db, getSettings, getSecret, setSetting, DEFAULT_SETTINGS };

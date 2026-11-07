@@ -11,7 +11,7 @@ const { requireAuth, rateLimit } = require('../middleware');
 
 const router = express.Router();
 
-// Direct UPI needs a UPI ID in Admin → Settings; Razorpay needs keys in .env (or demo mode, outside production).
+// Direct UPI needs a UPI ID in Admin → Settings; Razorpay needs keys (Admin → Settings or .env), or demo mode outside production.
 function paymentOptions(settings) {
   const onlineMethod = payments.isConfigured() ? 'razorpay' : payments.demoMode() ? 'demo' : null;
   return {
@@ -19,6 +19,7 @@ function paymentOptions(settings) {
     online: settings.online_payments_enabled === '1' && Boolean(onlineMethod),
     cod: settings.cod_enabled === '1',
     onlineMethod,
+    testMode: payments.testMode(),
   };
 }
 
@@ -182,22 +183,28 @@ router.post('/checkout/upi/:orderNumber', requireAuth, rateLimit({ windowMs: 15 
 });
 
 // Razorpay Checkout posts here (via a hidden form) after the customer pays.
-router.post('/checkout/verify', requireAuth, (req, res, next) => {
+router.post('/checkout/verify', requireAuth, async (req, res, next) => {
   const order = loadMyOrder(req, String(req.body.order_number || ''));
   if (!order) return next();
+  if (order.payment_status === 'paid') return res.redirect(`/order/${order.order_number}/success`);
+  const paymentId = String(req.body.razorpay_payment_id || '');
   const valid = order.payment_method === 'razorpay' && payments.isConfigured() &&
     String(req.body.razorpay_order_id) === order.razorpay_order_id &&
     payments.verifyPaymentSignature({
       razorpayOrderId: order.razorpay_order_id,
-      razorpayPaymentId: String(req.body.razorpay_payment_id || ''),
+      razorpayPaymentId: paymentId,
       signature: String(req.body.razorpay_signature || ''),
     });
-  if (!valid) {
-    db.prepare("INSERT INTO order_history (order_id, status, note) VALUES (?, ?, 'Payment verification failed')").run(order.id, order.status);
+  const outcome = valid ? await payments.capturePayment(paymentId, { orderId: order.razorpay_order_id, amountPaise: order.total * 100 }) : 'invalid';
+  if (outcome !== 'captured' && outcome !== 'unconfirmed') {
+    db.prepare('INSERT INTO order_history (order_id, status, note) VALUES (?, ?, ?)')
+      .run(order.id, order.status, valid ? `Razorpay payment ${paymentId} not accepted (${outcome})` : 'Payment verification failed');
     req.flash('error', 'We could not verify that payment. If money was deducted, it will be refunded automatically — or contact us with your order number.');
     return res.redirect(`/checkout/pay/${order.order_number}`);
   }
-  markPaid(order.id, { razorpayPaymentId: String(req.body.razorpay_payment_id), note: 'Paid online via Razorpay' });
+  // 'unconfirmed': the signature proves the customer paid, but Razorpay could not be reached to capture it.
+  const note = outcome === 'captured' ? 'Paid online via Razorpay' : 'Paid online via Razorpay — capture not confirmed, check this payment in the Razorpay dashboard';
+  markPaid(order.id, { razorpayPaymentId: paymentId, note: payments.testMode() ? `${note} (TEST mode — no real money)` : note });
   req.session.cart = {};
   res.redirect(`/order/${order.order_number}/success`);
 });

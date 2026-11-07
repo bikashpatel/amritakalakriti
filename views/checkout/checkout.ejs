@@ -60,7 +60,7 @@
             <label class="pay-option">
               <input type="radio" name="payment" value="online" <%= chosen === 'online' ? 'checked' : '' %>>
               <div>
-                <strong>Pay online<% if (options.onlineMethod === 'demo') { %><span class="demo-flag">Demo mode</span><% } %></strong>
+                <strong>Pay online<% if (options.onlineMethod === 'demo') { %><span class="demo-flag">Demo mode</span><% } else if (options.testMode) { %><span class="demo-flag">Test mode</span><% } %></strong>
                 <small>Secure payment via Razorpay</small>
                 <div class="pay-logos"><span>UPI</span><span>GPay</span><span>PhonePe</span><span>Visa</span><span>Mastercard</span><span>RuPay</span><span>Net Banking</span></div>
               </div>

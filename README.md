@@ -36,7 +36,7 @@ To reset the admin password to the one in `.env`, run `npm run seed -- --reset-a
 - **Artwork page:** image gallery and an **"On your wall"** preview that shows the piece to scale above a sofa. It also shows details, care and shipping info, reviews (with a "verified buyer" badge) and related works.
 - **Accounts:** register, sign in, saved address, change password.
 - **Cart:** add to cart without a page reload, quantity limits by stock, and a free-shipping progress bar.
-- **Checkout:** Indian address validation (states, 6-digit PIN code, mobile number), then **UPI** paid straight to the store's bank (QR code or UPI app link), **Razorpay** (cards, UPI, net banking, wallets, once its keys are added) or **Cash on Delivery**.
+- **Checkout:** Indian address validation (states, 6-digit PIN code, mobile number), then **UPI** paid straight to the store's bank (QR code or UPI app link), **Razorpay** (cards, UPI, net banking, wallets, once it is connected in the admin) or **Cash on Delivery**.
 - **My orders:** a progress tracker, courier and tracking number, a status timeline, and cancellation before dispatch.
 - **Wishlist**, **contact form** and **policy pages** (shipping, returns, privacy, terms). Razorpay requires these pages before it activates your account.
 
@@ -49,7 +49,7 @@ To reset the admin password to the one in `.env`, run `npm run seed -- --reset-a
 - **Reviews:** hide or delete reviews.
 - **Messages and subscribers:** read contact-form messages; export subscribers as CSV.
 - **Pages:** edit the About and policy pages.
-- **Settings:** store details, homepage text and which artwork fills each hero frame, announcement bar, shipping fee and free-shipping threshold, payment options, social links.
+- **Settings:** store details, homepage text and which artwork fills each hero frame, announcement bar, shipping fee and free-shipping threshold, payment options, Razorpay keys, social links.
 
 ### Built-in protections
 - Passwords are hashed with bcrypt, and sign-in is rate-limited.
@@ -58,7 +58,8 @@ To reset the admin password to the one in `.env`, run `npm run seed -- --reset-a
 - Security headers include a strict Content Security Policy.
 - Prices and stock are always recalculated on the server.
 - **One-of-a-kind safety:** stock is reserved inside a database transaction when an order is placed, so two buyers can never both buy the same original. Unpaid online orders release the reservation after 30 minutes; UPI orders keep it once the customer sends a payment reference, until the store confirms or cancels.
-- Razorpay payments are verified by HMAC signature in the browser flow and again by the webhook.
+- Razorpay payments are verified by HMAC signature in the browser flow and again by the webhook, then checked against the order amount and captured.
+- Razorpay keys entered in the admin are checked with Razorpay before saving and are never shown again or passed to any page.
 - Uploaded images are checked by their file contents, not just their names.
 
 ---
@@ -70,7 +71,7 @@ Customers can pay three ways. Each can be switched on or off in **Admin → Sett
 | Method | Money goes to | Confirmed by | Set up |
 |---|---|---|---|
 | **UPI** | Your bank account, directly | You, from the order page | Add your UPI ID in Admin → Settings |
-| **Razorpay** | Your Razorpay account | Automatically | Add keys to `.env` (below) |
+| **Razorpay** | Your Razorpay account | Automatically | Paste your keys in Admin → Settings → Razorpay (below) |
 | **Cash on delivery** | The courier collects it | You, from the order page | Nothing |
 
 ### UPI (direct to your bank)
@@ -86,19 +87,20 @@ Orders where the customer never sends a reference are cancelled after 30 minutes
 
 ### Razorpay
 
-Razorpay switches on as soon as its keys are in `.env`; no code changes are needed. Without keys it is hidden on the live site. In development (`NODE_ENV` not `production`) it runs in **demo mode** instead: the payment step shows a simulated gateway, so the whole flow can be tested and no money is charged.
+Everything is built in; Razorpay switches on as soon as you connect your keys, with no code changes or restart. Until then it is hidden on the live site. In development (`NODE_ENV` not `production`) it runs in **demo mode** instead: the payment step shows a simulated gateway, so the whole flow can be tested and no money is charged.
 
 To take Razorpay payments:
 
-1. Create a Razorpay account and complete KYC. The site already has the policy pages Razorpay asks for.
-2. In the Razorpay Dashboard go to **Account & Settings → API Keys** and generate keys. Start with **Test mode** keys (`rzp_test_…`).
-3. Add the keys to `.env`:
-   ```
-   RAZORPAY_KEY_ID=rzp_test_xxxxx
-   RAZORPAY_KEY_SECRET=xxxxx
-   ```
-4. Add a webhook under **Webhooks**. URL: `https://amritakalakriti.com/webhooks/razorpay`. Events: `payment.captured` and `order.paid`. Put its secret in `RAZORPAY_WEBHOOK_SECRET`. The webhook confirms payments even if a customer closes the browser before returning to the site.
-5. Restart the server. The console shows `Razorpay → TEST keys`. When testing is done, swap in your live keys.
+1. Create a Razorpay account and complete KYC. Razorpay checks the website: it already has the About, Contact, Shipping, Returns, Privacy and Terms pages it asks for. Make sure your real phone number, address and business details are in Admin → Settings and Admin → Pages first.
+2. In the Razorpay Dashboard go to **Account & Settings → API Keys** and generate a key. Start with **Test mode** (`rzp_test_…`).
+3. In **Admin → Settings → Razorpay**, paste the Key ID and Key Secret and click **Connect Razorpay**. The keys are checked with Razorpay before they are saved; wrong keys are refused.
+4. Still in Razorpay, open **Account & Settings → Webhooks → Add New Webhook**. Paste the webhook URL shown on the admin page (`https://amritakalakriti.com/webhooks/razorpay`), tick `payment.authorized`, `payment.captured`, `payment.failed` and `order.paid`, and make up a webhook secret. Enter the same secret in the admin and save. The webhook confirms payments even if a customer closes the browser before returning to the site.
+5. Place a test order: checkout shows a **Test mode** label, and Razorpay's test cards or the UPI ID `success@razorpay` complete the payment. The order history and the admin sidebar say **TEST**: no real money arrives, so never ship a test order.
+6. Once Razorpay activates your account, generate **Live mode** keys and paste them in the same place. Unpaid checkouts automatically move to the new keys.
+
+The site captures every payment itself, so it works whether your Razorpay account captures payments automatically or manually. Refunds are issued from the Razorpay dashboard: the payment ID on each order page links straight to it. **Disconnect** in the admin removes the keys and hides Razorpay at checkout.
+
+Keys can also be set on the server instead, as `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` in `.env`. Those take priority and are then shown as read-only in the admin.
 
 Once Razorpay is live you can keep UPI on as well, or switch it off in Admin → Settings.
 
@@ -126,7 +128,7 @@ src/
   db.js                   SQLite schema and default settings
   seed.js                 First-run categories, artworks and admin user
   cart.js / orders.js     Cart pricing, order creation, stock reservation, payments state
-  payments.js             Razorpay API and signature checks
+  payments.js             Razorpay keys, API calls (orders, capture, key check) and signature checks
   upi.js                  Direct UPI: payment links, QR codes, reference numbers
   middleware.js           Auth, CSRF, flash messages, security headers, rate limiting
   uploads.js              Image upload handling
@@ -165,7 +167,7 @@ Set these in `.env` (Docker Compose) or as environment variables on your platfor
 | `SESSION_SECRET` | **Required.** A random string of 32+ characters; the app refuses to start without one. Generate with `openssl rand -hex 32`. |
 | `BASE_URL` | `https://amritakalakriti.com` |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The first admin account, created on the first start. |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Your Razorpay keys. If left empty, Razorpay is hidden in production and runs in demo mode in development. |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Optional. Normally you paste Razorpay keys in Admin → Settings → Razorpay instead; keys set here take priority. With no keys anywhere, Razorpay is hidden in production and runs in demo mode in development. |
 | `BEHIND_CLOUDFLARE` | `1` when all traffic comes through Cloudflare, e.g. a Cloudflare Tunnel. |
 | `TRUST_PROXY` | `1` (the default) behind one proxy or load balancer. |
 

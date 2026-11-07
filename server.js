@@ -86,8 +86,9 @@ const server = app.listen(config.port, () => {
   console.log(`\n  AmritaKalakriti is running → ${config.baseUrl}`);
   console.log(`  Admin panel               → ${config.baseUrl}/admin`);
   const { upi_enabled: upiOn, upi_id: upiId } = getSettings();
-  const rzp = payments.isConfigured() ? (config.razorpay.keyId.startsWith('rzp_test_') ? 'TEST keys' : 'LIVE keys')
-    : payments.demoMode() ? 'DEMO mode (add keys to .env)' : 'off (add keys to .env to switch it on)';
+  const rzp = payments.isConfigured()
+    ? `${payments.testMode() ? 'TEST keys' : 'LIVE keys'} (from ${payments.keys().source === 'env' ? '.env' : 'Admin → Settings'})`
+    : payments.demoMode() ? 'DEMO mode (connect it in Admin → Settings → Razorpay)' : 'off (connect it in Admin → Settings → Razorpay)';
   console.log(`  UPI payments              → ${upiOn === '1' && upiId ? upiId : 'not set up (Admin → Settings → Payments)'}`);
   console.log(`  Razorpay                  → ${rzp}\n`);
 });

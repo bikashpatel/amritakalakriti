@@ -67,8 +67,8 @@
     </nav>
 
     <div class="adm-side-foot">
-      <% const payOn = [upiReady && 'UPI', paymentsLive && 'Razorpay'].filter(Boolean); %>
-      <a class="adm-pay-status <%= payOn.length ? 'is-live' : 'is-demo' %>" href="/admin/settings#payments">
+      <% const payOn = [upiReady && 'UPI', paymentsLive && (paymentsTest ? 'Razorpay TEST' : 'Razorpay')].filter(Boolean); %>
+      <a class="adm-pay-status <%= payOn.length && !paymentsTest ? 'is-live' : 'is-demo' %>" href="/admin/settings#<%= paymentsTest ? 'razorpay' : 'payments' %>">
         <span class="dot" aria-hidden="true"></span>
         <%= payOn.length ? `${payOn.join(' + ')} payments on` : paymentsDemo ? 'Payments in demo mode' : 'Online payments not set up' %>
       </a>
