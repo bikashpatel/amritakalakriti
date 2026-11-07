@@ -6,7 +6,7 @@ The e-commerce website for **amritakalakriti.com**: a handmade-art store for can
 
 Built with Node.js, Express, SQLite and server-rendered EJS. It has no build step and needs no separate database server.
 
-This application is designed, developed & maintained by [ELARXSYS.COM](https://elarxsys.com).
+© This website is designed and developed by [Elarxsys AI Hub Pvt. Ltd.](https://elarxsys.com).
 
 ---
 
