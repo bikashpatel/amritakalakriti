@@ -137,7 +137,7 @@ public/
   css/store.css           Storefront styles
   css/admin.css           Admin styles
   js/main.js, js/admin.js Front-end behaviour (no external libraries)
-  images/                 Logo, peacock badge, favicons, share image, art-form illustrations
+  images/                 Logo, emblem, favicons, share image, art-form illustrations
   images/artworks/        Photos of the opening collection
   uploads/                Images uploaded from the admin
 scripts/                  generate-art.js (art-form illustrations), backup.js (database backup)

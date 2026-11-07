@@ -25,10 +25,10 @@ body {
 .is-scrolled .header-row { min-height: 68px; }
 .header-left { display: flex; align-items: center; gap: 8px; }
 .brand { display: flex; align-items: center; gap: 10px; color: inherit; }
-.brand-badge { height: 62px; width: auto; transition: height .3s var(--ease); }
-.brand-logo { height: 68px; width: auto; transition: height .3s var(--ease); }
-.is-scrolled .brand-badge { height: 50px; }
-.is-scrolled .brand-logo { height: 54px; }
+.brand-emblem { height: 58px; width: auto; transition: height .3s var(--ease); }
+.brand-word { height: 46px; width: auto; transition: height .3s var(--ease); }
+.is-scrolled .brand-emblem { height: 48px; }
+.is-scrolled .brand-word { height: 38px; }
 .header-search { position: relative; display: flex; align-items: center; width: min(290px, 100%); }
 .header-search .icon { position: absolute; left: 14px; width: 17px; height: 17px; color: var(--muted); pointer-events: none; }
 .header-search input { min-height: 42px; padding-left: 40px; border-radius: var(--radius-pill); background: rgba(255, 253, 248, .8); font-size: .92rem; }
@@ -212,8 +212,8 @@ body {
 .site-footer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
 .site-footer a:hover { color: var(--gold-light); }
 .footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 40px; padding-bottom: 48px; }
-.footer-medallion { display: block; width: 112px; margin-bottom: 18px; }
-.footer-medallion img { display: block; width: 100%; height: auto; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .35)); }
+.footer-medallion { display: grid; place-items: center; width: 108px; height: 108px; border-radius: 50%; background: radial-gradient(circle, #FFFBF2, #F2E5CC); box-shadow: 0 0 0 1px var(--gold), 0 0 0 7px var(--night), 0 0 0 8px rgba(226, 194, 133, .45); margin-bottom: 18px; }
+.footer-medallion img { width: 78%; }
 .footer-name { font: 500 1.9rem/1 var(--font-display); color: #FFF4E2; margin: 0 0 4px; }
 .footer-deva { color: var(--gold-light); font-size: 1.05rem; margin: 0 0 12px; }
 .footer-tag { font: 400 .68rem/1 var(--font-caps); letter-spacing: .26em; text-transform: uppercase; color: #E2CFA9; margin-bottom: 10px; }
@@ -527,7 +527,7 @@ body {
 .contact-card p { margin: 0; font-size: .92rem; color: var(--muted); }
 .hp-field { position: absolute; left: -9999px; }
 .error-page { padding-block: clamp(48px, 8vw, 110px); }
-.error-emblem { width: 150px; margin: 0 auto 12px; }
+.error-emblem { width: 220px; margin: 0 auto 8px; opacity: .9; }
 .error-code { font: 500 .8rem/1 var(--font-caps); letter-spacing: .3em; color: var(--gold-ink); margin-bottom: 12px; }
 
 /* ---------- Toast ---------- */
@@ -557,10 +557,10 @@ body {
   .header-row { grid-template-columns: auto 1fr auto; min-height: 66px; gap: 8px; }
   .is-scrolled .header-row { min-height: 60px; }
   .brand { justify-content: center; }
-  .brand-badge { height: 44px; }
-  .brand-logo { height: 50px; }
-  .is-scrolled .brand-badge { height: 40px; }
-  .is-scrolled .brand-logo { height: 44px; }
+  .brand-emblem { height: 42px; }
+  .brand-word { height: 34px; }
+  .is-scrolled .brand-emblem { height: 38px; }
+  .is-scrolled .brand-word { height: 30px; }
   .header-search, .icon-btn-label { display: none; }
   .nav-toggle, .search-mobile { display: inline-flex; }
   .main-nav { position: fixed; inset: 0 auto 0 0; width: min(340px, 86vw); z-index: 60; background: var(--paper); border: 0; box-shadow: var(--shadow-lg); transform: translateX(-105%); transition: transform .35s var(--ease); display: flex; flex-direction: column; overflow-y: auto; }
@@ -568,6 +568,7 @@ body {
   .nav-drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 14px 14px 20px; border-bottom: 1px solid var(--line); }
   .nav-drawer-brand { display: flex; align-items: center; gap: 8px; }
   .nav-drawer-head img { height: 40px; width: auto; }
+  .nav-drawer-brand img + img { height: 32px; }
   .nav-list { flex-direction: column; gap: 0; padding: 10px 0; }
   .nav-list > li > a, .nav-mega-toggle { width: 100%; justify-content: space-between; padding: 16px 22px; font-size: .8rem; }
   .nav-list > li > a::after, .nav-mega-toggle::after { display: none; }
@@ -611,9 +612,9 @@ body {
 @media (max-width: 640px) {
   .announce { font-size: .62rem; letter-spacing: .1em; }
   .announce .icon { display: none; }
-  .brand { gap: 5px; }
-  .brand-badge, .is-scrolled .brand-badge { height: 30px; }
-  .brand-logo, .is-scrolled .brand-logo { height: 34px; }
+  .brand { gap: 4px; }
+  .brand-emblem, .is-scrolled .brand-emblem { height: 28px; }
+  .brand-word, .is-scrolled .brand-word { height: 24px; }
   .header-actions .icon-btn { min-width: 38px; padding: 0 6px; }
   .search-mobile { display: none; }
   .product-grid, .product-grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 12px; }
@@ -653,4 +654,10 @@ body {
   .spec-list { grid-template-columns: 1fr; }
   .spec-list dt { border-bottom: 0; padding-bottom: 2px; }
   .spec-list dd { padding-top: 2px; }
+}
+
+/* Smallest phones: keep the emblem + wordmark pair clear of the menu and account icons. */
+@media (max-width: 380px) {
+  .brand-emblem, .is-scrolled .brand-emblem { height: 25px; }
+  .brand-word, .is-scrolled .brand-word { height: 21px; }
 }
