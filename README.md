@@ -49,7 +49,7 @@ To reset the admin password to the one in `.env`, run `npm run seed -- --reset-a
 - **Reviews:** hide or delete reviews.
 - **Messages and subscribers:** read contact-form messages; export subscribers as CSV.
 - **Pages:** edit the About and policy pages.
-- **Settings:** store details, homepage text, announcement bar, shipping fee and free-shipping threshold, payment options, social links.
+- **Settings:** store details, homepage text and which artwork fills each hero frame, announcement bar, shipping fee and free-shipping threshold, payment options, social links.
 
 ### Built-in protections
 - Passwords are hashed with bcrypt, and sign-in is rate-limited.

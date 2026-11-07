@@ -994,6 +994,9 @@ const SETTING_RULES = {
   announcement: { max: 240 },
   hero_title: { max: 140 },
   hero_subtitle: { max: 500, multiline: true },
+  hero_art_main: { max: 100, artwork: true },
+  hero_art_round: { max: 100, artwork: true },
+  hero_art_card: { max: 100, artwork: true },
   about_short: { max: 2000, multiline: true },
   shipping_fee: { int: true },
   free_shipping_min: { int: true },
@@ -1017,11 +1020,14 @@ function renderSettings(res, { form, errors = {}, pwErrors = {}, status = 200 })
       keyMode: config.razorpay.keyId ? (config.razorpay.keyId.startsWith('rzp_live_') ? 'Live keys' : 'Test keys') : '',
       webhook: Boolean(config.razorpay.webhookSecret),
     },
+    heroChoices: heroChoices.all(),
     extraKeys: Object.keys(DEFAULT_SETTINGS).filter((k) => !SETTING_GROUPED.has(k)),
   });
 }
+// Artworks that can be pinned to a homepage hero frame (they need a photo).
+const heroChoices = db.prepare('SELECT slug, title FROM products WHERE is_active = 1 AND image IS NOT NULL ORDER BY title COLLATE NOCASE');
 const SETTING_GROUPED = new Set(['store_name', 'store_tagline', 'store_email', 'store_phone', 'store_whatsapp', 'store_address', 'gstin',
-  'announcement', 'hero_title', 'hero_subtitle', 'about_short', 'shipping_fee', 'free_shipping_min', 'cod_enabled',
+  'announcement', 'hero_title', 'hero_subtitle', 'hero_art_main', 'hero_art_round', 'hero_art_card', 'about_short', 'shipping_fee', 'free_shipping_min', 'cod_enabled',
   'online_payments_enabled', 'upi_enabled', 'upi_id', 'upi_payee_name', 'instagram_url', 'facebook_url', 'youtube_url']);
 
 router.get('/settings', (req, res) => {
@@ -1046,6 +1052,7 @@ router.post('/settings', (req, res) => {
     else if (rule.url && v && !/^https?:\/\/\S+$/i.test(v)) errors[key] = 'Use a full link starting with https://';
     else if (rule.gstin && v && !/^[0-9]{2}[A-Z0-9]{13}$/.test(v.toUpperCase())) errors[key] = 'A GSTIN is 15 characters, e.g. 21ABCDE1234F1Z5 — or leave blank.';
     else if (rule.upi && v && !upi.isValidId(v)) errors[key] = 'A UPI ID looks like name@bank, e.g. amritakalakriti@ybl — or leave blank.';
+    else if (rule.artwork && v && !heroChoices.all().some((a) => a.slug === v)) errors[key] = 'Choose an artwork from the list, or Automatic.';
     if (rule.digits) v = v.replace(/[\s+-]/g, '');
     if (rule.gstin) v = v.toUpperCase();
     form[key] = v;

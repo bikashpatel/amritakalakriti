@@ -25,14 +25,20 @@ const SORTS = {
   popular: { label: 'Most viewed', sql: 'p.views DESC, p.id DESC' },
 };
 const PER_PAGE = 12;
+const HERO_SLOTS = ['hero_art_main', 'hero_art_round', 'hero_art_card'];
 
 router.get('/', (req, res) => {
   const featured = db.prepare(`${PRODUCT_SELECT} WHERE ${VISIBLE} AND p.is_featured = 1
     ORDER BY (p.stock > 0) DESC, p.created_at DESC, p.id DESC LIMIT 8`).all();
   const newest = db.prepare(`${PRODUCT_SELECT} WHERE ${VISIBLE} AND p.stock > 0
     ORDER BY p.created_at DESC, p.id DESC LIMIT 4`).all();
-  const heroArt = db.prepare(`${PRODUCT_SELECT} WHERE ${VISIBLE} AND p.is_featured = 1 AND p.image IS NOT NULL
-    ORDER BY p.price DESC LIMIT 3`).all();
+  // Hero frames (arch, round, card): an artwork chosen in Admin → Settings, else the priciest featured ones.
+  const { settings } = res.locals;
+  const pinned = db.prepare(`${PRODUCT_SELECT} WHERE ${VISIBLE} AND p.image IS NOT NULL AND p.slug = ?`);
+  const heroArt = HERO_SLOTS.map((key) => (settings[key] && pinned.get(settings[key])) || null);
+  const spare = db.prepare(`${PRODUCT_SELECT} WHERE ${VISIBLE} AND p.is_featured = 1 AND p.image IS NOT NULL
+    ORDER BY p.price DESC LIMIT 3`).all().filter((p) => !heroArt.some((h) => h && h.id === p.id));
+  heroArt.forEach((h, i) => { if (!h) heroArt[i] = spare.shift() || null; });
   const counts = db.prepare(`SELECT COUNT(*) AS artworks, COUNT(DISTINCT category_id) AS forms FROM products WHERE is_active = 1`).get();
   res.render('shop/home', { featured, newest, heroArt, counts });
 });

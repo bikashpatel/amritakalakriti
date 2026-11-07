@@ -96,6 +96,17 @@
         <label for="s-hero-sub">Hero subtitle</label>
         <textarea id="s-hero-sub" name="hero_subtitle" rows="3" maxlength="500"><%= v('hero_subtitle') %></textarea>
       </div>
+      <% [['hero_art_main', 'Large arch picture'], ['hero_art_round', 'Round picture'], ['hero_art_card', 'Tilted card picture']].forEach(([key, label]) => { %>
+      <div class="field<%= fe(key) %>">
+        <label for="s-<%= key %>"><%= label %></label>
+        <select id="s-<%= key %>" name="<%= key %>">
+          <option value="">Automatic — a featured artwork</option>
+          <% heroChoices.forEach((a) => { %><option value="<%= a.slug %>"<%= a.slug === v(key) ? ' selected' : '' %>><%= a.title %></option><% }) %>
+        </select>
+        <%- include('partials/err', { msg: errors[key] }) %>
+      </div>
+      <% }) %>
+      <p class="hint">The three framed pictures beside the hero title. Automatic frames show your featured artworks, most expensive first.</p>
       <div class="field">
         <label for="s-about">About (short)</label>
         <textarea id="s-about" name="about_short" rows="5" maxlength="2000"><%= v('about_short') %></textarea>
